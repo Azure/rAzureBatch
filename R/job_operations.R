@@ -20,7 +20,7 @@ addJob <- function(jobId, poolId, splitter, expr, merger, container, inputFile, 
 
   resourceFile <- generateSasUrl(storageCredentials$name, container, envFileName, sasToken)
 
-  uploadData(container, system.file("startup", "splitter.R", package="AzureBatch"), sasToken)
+  uploadData(container, system.file("startup", "splitter.R", package="rAzureBatch"), sasToken)
 
   body = list(id=jobId,
               poolInfo=list("poolId"=poolId),
@@ -69,10 +69,10 @@ addJob <- function(jobId, ...){
                 sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
 
   createContainer(jobId)
-  uploadData(jobId, system.file("startup", "splitter.R", package="AzureBatch"))
-  uploadData(jobId, system.file("startup", "worker.R", package="AzureBatch"))
-  uploadData(jobId, system.file("startup", "merger.R", package="AzureBatch"))
-  uploadData(jobId, system.file("startup", packageVersion, package="AzureBatch"))
+  uploadData(jobId, system.file("startup", "splitter.R", package="rAzureBatch"))
+  uploadData(jobId, system.file("startup", "worker.R", package="rAzureBatch"))
+  uploadData(jobId, system.file("startup", "merger.R", package="rAzureBatch"))
+  uploadData(jobId, system.file("startup", packageVersion, package="rAzureBatch"))
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
   resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, "splitter.R", sasToken),
