@@ -107,6 +107,7 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   setPoolOption(fileName, fullName)
   config <- getOption("az_config")
   pool <- config$batchAccount$pool
+  targetDedicated <- pool$poolSize$targetDedicated
 
   if(!is.null(pool$poolSize$targetDedicated)){
     response <- addPool(
@@ -132,11 +133,11 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   pool <- getPool(pool$name)
 
   if(waitForPool){
-    waitForNodesToComplete(pool$id, 60000, targetDedicated = pool$targetDedicated)
+    waitForNodesToComplete(pool$id, 60000, targetDedicated = targetDedicated)
   }
 
   print("Your pool has been registered.")
-  print(sprintf("Node Count: %i", pool$targetDedicated))
+  print(sprintf("Node Count: %i", targetDedicated))
   return(getOption("az_config"))
 }
 
@@ -159,9 +160,9 @@ getPoolWorkers <- function(poolId, ...){
   args <- list(...)
   raw <- !is.null(args$RAW)
 
-  batchCredentials <- GetBatchCredentials()
+  batchCredentials <- getBatchCredentials()
 
-  nodes <- ListPoolNodes(poolId)
+  nodes <- listPoolNodes(poolId)
 
   if(length(nodes$value) > 0){
     for(i in 1:length(nodes$value)){
