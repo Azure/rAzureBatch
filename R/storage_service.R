@@ -184,7 +184,7 @@ uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
       path = paste0("/", containerName, "/", lastWord),
       headers = headers)
 
-    callStorageSas(request, storageCredentials, body=upload_file(fileDirectory), sas_params = sasToken)
+    callStorageSas(request, storageCredentials$name, body=upload_file(fileDirectory), sas_params = sasToken)
   }
   else{
     uploadChunk(containerName, fileDirectory, sas_params = sasToken)
