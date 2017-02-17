@@ -13,10 +13,7 @@ addJob <- function(jobId, ...){
 
   packages <- args$packages
   packageVersion <- "AzureBatch_0.1.3.tar.gz"
-  commands <- c("sed -i -e 's/Defaults    requiretty.*/ #Defaults    requiretty/g' /etc/sudoers",
-                "export PATH=/anaconda/envs/py35/bin:$PATH",
-                "sudo env PATH=$PATH pip install --no-dependencies blobxfer",
-                sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
+  commands <- c(sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
 
   createContainer(jobId)
   uploadData(jobId, system.file(startupFolderName, "splitter.R", package="rAzureBatch"))

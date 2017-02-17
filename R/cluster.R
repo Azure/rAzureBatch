@@ -125,14 +125,15 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
     raw = TRUE,
     packages = config$batchAccount$rPackages$github)
 
+  pool <- getPool(pool$name)
+
   if(grepl("The specified pool already exists.", response)){
     print("The specified pool already exists. Will use existing pool.")
   }
-
-  pool <- getPool(pool$name)
-
-  if(waitForPool){
-    waitForNodesToComplete(pool$id, 60000, targetDedicated = pool$targetDedicated)
+  else{
+    if(waitForPool){
+      waitForNodesToComplete(pool$id, 60000, targetDedicated = pool$targetDedicated)
+    }
   }
 
   print("Your pool has been registered.")
