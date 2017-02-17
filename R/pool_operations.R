@@ -20,17 +20,12 @@ addPool <- function(poolId, vmSize, ...){
 
   batchCredentials <- getBatchCredentials()
 
-  commands <- c("sed -i -e 's/Defaults    requiretty.*/ #Defaults    requiretty/g' /etc/sudoers",
-                "export PATH=/anaconda/envs/py35/bin:$PATH",
-                "sudo env PATH=$PATH pip install --no-dependencies blobxfer")
-
-
-  print(.linuxWrapCommands(commands))
+  commands <- c(.getGithubInstallationCommand(packages))
 
   body = list(vmSize = vmSize,
               id = poolId,
               startTask = list(
-                commandLine = .linuxWrapCommands(commands),
+                commandLine = commands,
                 runElevated = TRUE,
                 waitForSuccess = TRUE
               ),
