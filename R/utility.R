@@ -19,7 +19,7 @@
   if(length(packages) != 0){
       for(package in packages){
         installation <- paste0(installation,
-                              sprintf(" R -e \'library(\"%s\"); install_github(\"%s\")\'", "devtools", package),
+                              sprintf(" R -e \'library(%s); install_github(\"%s\")\'", "devtools", package),
                               ";")
       }
   }
