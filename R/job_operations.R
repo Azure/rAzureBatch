@@ -1,52 +1,3 @@
-addJob <- function(jobId, poolId, splitter, expr, merger, container, inputFile, configName, ...){
-  headers <- character()
-
-  batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
-
-  commands <- c(.getInstallationCommand(configName))
-
-  my_env = as.environment(as.list(.GlobalEnv, all.names = TRUE))
-  my_env[["SPLITTER"]] <- splitter
-  my_env[["MERGER"]] <- merger
-  my_env[["WORKER"]] <- expr
-
-  envFileName <- "environment.RData"
-  saveRDS(my_env, file = envFileName)
-
-  sasToken <- constructSas("2016-11-30", "rwcl", "c", container, storageCredentials$key)
-
-  uploadData(container, paste0(getwd(), "/", envFileName), sasToken)
-
-  resourceFile <- generateSasUrl(storageCredentials$name, container, envFileName, sasToken)
-
-  uploadData(container, system.file("startup", "splitter.R", package="rAzureBatch"), sasToken)
-
-  body = list(id=jobId,
-              poolInfo=list("poolId"=poolId),
-              jobPreparationTask = list(
-                commandLine = .linuxWrapCommands(commands),
-                runElevated = TRUE,
-                resourceFiles <- list(resourceFile)
-              ))
-
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
-
-  headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
-
-  request <- AzureRequest$new(
-    method = "POST",
-    path = "/jobs",
-    query = list("api-version" = apiVersion),
-    headers = headers
-  )
-
-  callBatchService(request, batchCredentials, body)
-
-  addTask(jobId, container, inputFile)
-}
-
 addJob <- function(jobId, ...){
   headers <- character()
   args <- list(...)
@@ -54,6 +5,8 @@ addJob <- function(jobId, ...){
 
   pool <- config$batchAccount$pool
   stopifnot(!is.null(pool))
+
+  startupFolderName <- "startup"
 
   batchCredentials <- getBatchCredentials()
   storageCredentials <- getStorageCredentials()
@@ -65,10 +18,10 @@ addJob <- function(jobId, ...){
                 sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
 
   createContainer(jobId)
-  uploadData(jobId, system.file("startup", "splitter.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", "worker.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", "merger.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", packageVersion, package="rAzureBatch"))
+  uploadData(jobId, system.file(startupFolderName, "splitter.R", package="rAzureBatch"))
+  uploadData(jobId, system.file(startupFolderName, "worker.R", package="rAzureBatch"))
+  uploadData(jobId, system.file(startupFolderName, "merger.R", package="rAzureBatch"))
+  uploadData(jobId, system.file(startupFolderName, packageVersion, package="rAzureBatch"))
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
   resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, "splitter.R", sasToken),

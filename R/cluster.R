@@ -3,19 +3,28 @@ AUTOSCALE_WORKDAY_FORMULA <- paste0(
   "$workHours = $curTime.hour >= 8 && $curTime.hour < 18;",
   "$isWeekday = $curTime.weekday >= 1 && $curTime.weekday <= 5;",
   "$isWorkingWeekdayHour = $workHours && $isWeekday;",
-  "$TargetDedicated = $isWorkingWeekdayHour ? 20:10;")
+  "$TargetDedicated = $isWorkingWeekdayHour ? %s:%s;")
 
 AUTOSCALE_WEEKEND_FORMULA <- paste0(
   "$isWeekend = $curTime.weekday >= 6 && $curTime.weekday <= 7;",
-  "$TargetDedicated = $isWeekend ? 10:0;")
+  "$TargetDedicated = $isWeekend ? %s:%s;")
 
 AUTOSCALE_MAX_CPU_FORMULA <- "$totalNodes =
 (avg($CPUPercent.GetSample(TimeInterval_Minute * 60)) < 0.2) ?
 ($CurrentDedicated * 0.9) : $totalNodes;"
 
+AUTOSCALE_QUEUE_FORMULA <- paste0(
+  "$samples = $ActiveTasks.GetSamplePercent(TimeInterval_Minute * 15);",
+  "$tasks = $samples < 70 ? max(0,$ActiveTasks.GetSample(1)) : max( $ActiveTasks.GetSample(1), avg($ActiveTasks.GetSample(TimeInterval_Minute * 15)));",
+  "$targetVMs = $tasks > 0? $tasks:max(0, $TargetDedicated/2);",
+  "$TargetDedicated = max(%s, min($targetVMs, %s));",
+  "$NodeDeallocationOption = taskcompletion;"
+)
+
 AUTOSCALE_FORMULA = list("WEEKEND" = AUTOSCALE_WEEKEND_FORMULA,
                          "WORKDAY" = AUTOSCALE_WORKDAY_FORMULA,
-                         "MAX_CPU" = AUTOSCALE_MAX_CPU_FORMULA)
+                         "MAX_CPU" = AUTOSCALE_MAX_CPU_FORMULA,
+                         "QUEUE" = AUTOSCALE_QUEUE_FORMULA)
 
 generatePoolConfig <- function(
   batchName,
@@ -69,8 +78,9 @@ generatePoolConfig <- function(fileName, ...){
           name = "myPoolName",
           vmSize = "STANDARD_A1",
           poolSize = list(
-            targetDedicated = 3,
-            autoscaleFormula = AUTOSCALE_MAX_CPU_FORMULA
+            minNodes = 3,
+            maxNodes = 10,
+            autoscaleFormula = "QUEUE"
           )
         ),
         rPackages = list(
@@ -107,24 +117,13 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   setPoolOption(fileName, fullName)
   config <- getOption("az_config")
   pool <- config$batchAccount$pool
-  targetDedicated <- pool$poolSize$targetDedicated
 
-  if(!is.null(pool$poolSize$targetDedicated)){
-    response <- addPool(
-      pool$name,
-      pool$vmSize,
-      targetDedicated = pool$poolSize$targetDedicated,
-      raw = TRUE,
-      packages = config$batchAccount$rPackages$github)
-  }
-  else{
-    response <- addPool(
-      pool$name,
-      pool$vmSize,
-      autoscaleFormula = pool$poolSize$autoscaleFormula,
-      raw = TRUE,
-      packages = config$batchAccount$rPackages$github)
-  }
+  response <- addPool(
+    pool$name,
+    pool$vmSize,
+    autoscaleFormula = .getFormula(pool$poolSize$autoscaleFormula, pool$poolSize$minNodes, pool$poolSize$maxNodes),
+    raw = TRUE,
+    packages = config$batchAccount$rPackages$github)
 
   if(grepl("The specified pool already exists.", response)){
     print("The specified pool already exists. Will use existing pool.")
@@ -133,11 +132,11 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   pool <- getPool(pool$name)
 
   if(waitForPool){
-    waitForNodesToComplete(pool$id, 60000, targetDedicated = targetDedicated)
+    waitForNodesToComplete(pool$id, 60000, targetDedicated = pool$targetDedicated)
   }
 
   print("Your pool has been registered.")
-  print(sprintf("Node Count: %i", targetDedicated))
+  print(sprintf("Node Count: %i", pool$targetDedicated))
   return(getOption("az_config"))
 }
 
@@ -234,6 +233,7 @@ waitForNodesToComplete <- function(poolId, timeout, ...){
     Sys.sleep(30)
   }
 
+  deletePool(poolId)
   stop("Timeout expired")
 }
 

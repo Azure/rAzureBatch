@@ -13,11 +13,7 @@ addPool <- function(poolId, vmSize, ...){
 
   autoscaleFormula <- ""
   if(!is.null(args$autoscaleFormula)){
-    autoscaleFormula <- autoscaleFormula
-  }
-
-  if(!is.null(args$targetDedicated) || !args$targetDedicated == -1){
-    autoscaleFormula <- sprintf("$TargetDedicated = %i", args$targetDedicated)
+    autoscaleFormula <- args$autoscaleFormula
   }
 
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
@@ -28,7 +24,7 @@ addPool <- function(poolId, vmSize, ...){
                 "export PATH=/anaconda/envs/py35/bin:$PATH",
                 "sudo env PATH=$PATH pip install --no-dependencies blobxfer")
 
-  #.getGithubInstallationCommand(packages)
+
   print(.linuxWrapCommands(commands))
 
   body = list(vmSize = vmSize,

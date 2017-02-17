@@ -30,3 +30,23 @@
 .linuxWrapCommands <- function(commands = c()){
   commandLine <- sprintf("/bin/bash -c \"set -e; set -o pipefail; %s wait\"", paste0(paste(commands, sep = " ", collapse = "; "),"; "))
 }
+
+.getFormula <- function(formulaName, min, max){
+  formulas <- names(AUTOSCALE_FORMULA)
+
+  if(formulaName == formulas[1]){
+    return(sprintf(AUTOSCALE_WEEKEND_FORMULA, min, max))
+  }
+  else if(formulaName == formulas[2]){
+    return(sprintf(AUTOSCALE_WORKDAY_FORMULA, min, max))
+  }
+  else if(formulaName == formulas[3]){
+    return(AUTOSCALE_MAX_CPU_FORMULA)
+  }
+  else if(formulaName == formulas[4]){
+    return(sprintf(AUTOSCALE_QUEUE_FORMULA, min, max))
+  }
+  else{
+
+  }
+}
