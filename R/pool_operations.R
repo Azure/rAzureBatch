@@ -91,7 +91,7 @@ resizePool <- function(poolId, ...){
   autoscaleFormula <- ""
 
   if(!is.null(args$autoscaleFormula)){
-    autoscaleFormula <- args$autoscaleFormula
+    autoscaleFormula <- .getFormula(args$autoscaleFormula)
   }
 
   if(!is.null(args$targetDedicated)){

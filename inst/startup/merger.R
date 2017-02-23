@@ -22,10 +22,10 @@ for(package in azbatchenv$packages){
 }
 parent.env(azbatchenv$exportenv) <- globalenv()
 
-results <- list()
+results <- vector("list", N)
 for(i in 1:N){
   task_result <- paste0(AZ_BATCH_TASK_WORKING_DIR, "/result/", JOB_ID, "-task", i, "-result.rds")
-  results<- c(results, readRDS(task_result))
+  results[i] <- readRDS(task_result)
 }
 
 file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]
