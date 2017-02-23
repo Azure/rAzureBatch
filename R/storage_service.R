@@ -156,6 +156,20 @@ createContainer <- function(containerName){
   callStorage(request, storageCredentials)
 }
 
+deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
+  storageCredentials <- getStorageCredentials()
+
+  if(length(sasToken) == 0){
+    sasToken <- constructSas("2016-11-30", "d", "c", containerName, storageCredentials$key)
+  }
+
+  request <- AzureRequest$new(
+    method = "DELETE",
+    path = paste0("/", containerName, "/", blobName))
+
+  callStorageSas(request, storageCredentials$name, sas_params = sasToken)
+}
+
 uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
   storageCredentials <- getStorageCredentials()
 
