@@ -12,20 +12,17 @@ addJob <- function(jobId, ...){
   storageCredentials <- getStorageCredentials()
 
   packages <- args$packages
-  packageVersion <- "AzureBatch_0.1.3.tar.gz"
-  commands <- c(sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
+  commands <- c("ls")
 
   createContainer(jobId)
   uploadData(jobId, system.file(startupFolderName, "splitter.R", package="rAzureBatch"))
   uploadData(jobId, system.file(startupFolderName, "worker.R", package="rAzureBatch"))
   uploadData(jobId, system.file(startupFolderName, "merger.R", package="rAzureBatch"))
-  uploadData(jobId, system.file(startupFolderName, packageVersion, package="rAzureBatch"))
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
   resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, "splitter.R", sasToken),
                         generateResourceFile(storageCredentials$name, jobId, "worker.R", sasToken),
-                        generateResourceFile(storageCredentials$name, jobId, "merger.R", sasToken),
-                        generateResourceFile(storageCredentials$name, jobId, packageVersion, sasToken))
+                        generateResourceFile(storageCredentials$name, jobId, "merger.R", sasToken))
 
   body = list(id=jobId,
               poolInfo=list("poolId" = pool$name),
