@@ -143,6 +143,32 @@ listBlobs <- function(containerName, sasToken = list()){
   }
 }
 
+listContainer <- function(){
+  storageCredentials <- getStorageCredentials()
+
+  query <- list('comp' = "list")
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/"),
+    query = query)
+
+  callStorage(request, storageCredentials)
+}
+
+deleteContainer <- function(containerName){
+  storageCredentials <- getStorageCredentials()
+
+  query <- list('restype' = "container")
+
+  request <- AzureRequest$new(
+    method = "DELETE",
+    path = paste0("/", containerName),
+    query = query)
+
+  callStorage(request, storageCredentials)
+}
+
 createContainer <- function(containerName){
   storageCredentials <- getStorageCredentials()
 
@@ -156,7 +182,7 @@ createContainer <- function(containerName){
   callStorage(request, storageCredentials)
 }
 
-deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
+deleteData <- function(containerName, blobName, sasToken = list(), ...){
   storageCredentials <- getStorageCredentials()
 
   if(length(sasToken) == 0){
@@ -171,7 +197,15 @@ deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
 }
 
 uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
-  storageCredentials <- getStorageCredentials()
+  args <- list(...)
+
+  if(!is.null(args$accountName)){
+    name <- args$accountName
+  }
+  else{
+    storageCredentials <- getStorageCredentials()
+    name <- storageCredentials$name
+  }
 
   if(length(sasToken) == 0){
     sasToken <- constructSas("2016-11-30", "rwcl", "c", containerName, storageCredentials$key)
@@ -193,19 +227,25 @@ uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
     headers['Content-Type'] <- endFile$type
     headers['x-ms-blob-type'] <- 'BlockBlob'
 
+    if(!is.null(args$remoteName)){
+      lastWord <- args$remoteName
+    }
+
     request <- AzureRequest$new(
       method = "PUT",
       path = paste0("/", containerName, "/", lastWord),
       headers = headers)
 
-    callStorageSas(request, storageCredentials$name, body=upload_file(fileDirectory), sas_params = sasToken)
+    callStorageSas(request, name, body=upload_file(fileDirectory), sas_params = sasToken)
   }
   else{
-    uploadChunk(containerName, fileDirectory, sas_params = sasToken)
+    uploadChunk(containerName, fileDirectory, sas_params = sasToken, ...)
   }
 }
 
-uploadChunk <- function(containerName, fileDirectory, sasToken = list()){
+uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
+  args <- list(...)
+
   storageCredentials <- getStorageCredentials()
 
   filePath <- strsplit(fileDirectory, "/")
@@ -241,6 +281,10 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list()){
     headers['Content-Length'] <- file.size(file)
     headers['Content-Type'] <- 'text/xml'
     headers['x-ms-blob-type'] <- 'BlockBlob'
+
+    if(!is.null(args$remoteName)){
+      blobName <- args$remoteName
+    }
 
     request <- AzureRequest$new(
       method = "PUT",
