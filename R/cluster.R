@@ -109,10 +109,10 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   pool <- config$batchAccount$pool
   targetDedicated <- pool$poolSize$targetDedicated
 
-  if(!is.null(pool$poolSize$targetDedicated)){
+  if(!is.null(targetDedicated)){
     response <- addPool(
       pool$name,
-      pool$vmSize,
+      pool$vmsize,
       targetDedicated = pool$poolSize$targetDedicated,
       raw = TRUE,
       packages = config$batchAccount$rPackages$github)
@@ -120,7 +120,7 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   else{
     response <- addPool(
       pool$name,
-      pool$vmSize,
+      pool$vmsize,
       autoscaleFormula = pool$poolSize$autoscaleFormula,
       raw = TRUE,
       packages = config$batchAccount$rPackages$github)
@@ -128,6 +128,10 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
 
   if(grepl("The specified pool already exists.", response)){
     print("The specified pool already exists. Will use existing pool.")
+  }
+  
+  if(grepl("AuthenticationFailed", response)){
+    print("Check your credentials and try again.")
   }
 
   pool <- getPool(pool$name)
