@@ -107,12 +107,11 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   setPoolOption(fileName, fullName)
   config <- getOption("az_config")
   pool <- config$batchAccount$pool
-  targetDedicated <- pool$poolSize$targetDedicated
 
-  if(!is.null(targetDedicated)){
+  if(!is.null(pool$poolSize$targetDedicated)){
     response <- addPool(
       pool$name,
-      pool$vmsize,
+      pool$vmSize,
       targetDedicated = pool$poolSize$targetDedicated,
       raw = TRUE,
       packages = config$batchAccount$rPackages$github)
@@ -120,7 +119,7 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   else{
     response <- addPool(
       pool$name,
-      pool$vmsize,
+      pool$vmSize,
       autoscaleFormula = pool$poolSize$autoscaleFormula,
       raw = TRUE,
       packages = config$batchAccount$rPackages$github)

@@ -3,13 +3,13 @@ storageVersion <- "2015-12-11"
 getStorageCredentials <- function(configName = "az_config.json", ...){
   config <- getOption("az_config")
 
-  if(!is.null(config) && !is.null(config$batchAccount$storageAccount)){
+  if(!is.null(config) && !is.null(config$storageAccount)){
     storageAccount <- config$batchAccount$storageAccount
     credentials <- StorageCredentials$new(name=storageAccount$name, key=storageAccount$key)
   }
   else{
     config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
-    credentials <- StorageCredentials$new(name=config$batchAccount$storageAccount$name, key=config$batchAccount$storageAccount$key)
+    credentials <- StorageCredentials$new(name=config$storageAccount$name, key=config$storageAccount$key)
   }
 
   credentials
