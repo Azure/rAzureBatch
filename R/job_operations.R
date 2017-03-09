@@ -28,7 +28,12 @@ addJob <- function(jobId, ...){
               poolInfo=list("poolId" = pool$name),
               jobPreparationTask = list(
                 commandLine = .linuxWrapCommands(commands),
-                runElevated = TRUE,
+                userIdentity = list(
+                  autoUser = list(
+                    scope = "task",
+                    elevationLevel = "admin"
+                  )
+                ),
                 waitForSuccess = TRUE,
                 resourceFiles = resourceFiles,
                 constraints = list(

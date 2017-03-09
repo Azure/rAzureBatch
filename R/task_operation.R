@@ -46,7 +46,12 @@ addTask <- function(jobId, taskId = "default", ...){
 
   body = list(id = taskId,
               commandLine = .linuxWrapCommands(commands),
-              runElevated = TRUE,
+              userIdentity = list(
+                autoUser = list(
+                  scope = "task",
+                  elevationLevel = "admin"
+                )
+              ),
               resourceFiles = resourceFiles,
               environmentSettings = list(setting))
 
@@ -108,7 +113,12 @@ addTaskMerge <- function(jobId, taskId = "default", dependsOn, ...){
 
   body = list(id = taskId,
               commandLine = .linuxWrapCommands(commands),
-              runElevated = TRUE,
+              userIdentity = list(
+                autoUser = list(
+                  scope = "task",
+                  elevationLevel = "admin"
+                )
+              ),
               resourceFiles = resourceFiles,
               environmentSettings = list(setting),
               dependsOn = list(taskIds = dependsOn))
@@ -146,8 +156,12 @@ waitForTasksToComplete <- function(jobId, timeout, ...){
 
   args <- list(...)
   progress <- args$progress
-  numOfTasks <- args$tasks
 
+  if(is.null(args$tasks)){
+    stop("The number of tasks was not initialized.")
+  }
+
+  numOfTasks <- args$tasks
   pb <- txtProgressBar(min = 0, max = numOfTasks, style = 3)
 
   timeToTimeout <- Sys.time() + timeout

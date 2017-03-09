@@ -1,4 +1,4 @@
-apiVersion <- "2016-07-01.3.1"
+apiVersion <- "2017-01-01.4.0"
 
 getBatchCredentials <- function(configPath = "az_config.json", ...){
   config <- getOption("az_config")
@@ -57,7 +57,6 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   stringToSign <- paste0(stringToSign, canonicalizedHeaders, "\n")
   stringToSign <- paste0(stringToSign, canonicalizedResource)
 
-  # sign the request
   authString <- sprintf("SharedKey %s:%s", credentials$name, credentials$signString(stringToSign))
 
   headers['Authorization'] <- authString

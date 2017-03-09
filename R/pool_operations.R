@@ -16,6 +16,11 @@ addPool <- function(poolId, vmSize, ...){
     autoscaleFormula <- args$autoscaleFormula
   }
 
+  maxTasksPerNode <- ""
+  if(!is.null(args$maxTasksPerNode)){
+    maxTasksPerNode <- args$maxTasksPerNode
+  }
+
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
   batchCredentials <- getBatchCredentials()
@@ -30,7 +35,12 @@ addPool <- function(poolId, vmSize, ...){
               id = poolId,
               startTask = list(
                 commandLine = commands,
-                runElevated = TRUE,
+                userIdentity = list(
+                  autoUser = list(
+                    scope = "task",
+                    elevationLevel = "admin"
+                  )
+                ),
                 waitForSuccess = TRUE
               ),
               virtualMachineConfiguration = list(
@@ -40,7 +50,9 @@ addPool <- function(poolId, vmSize, ...){
                                     version = "latest"),
                 nodeAgentSKUId ="batch.node.centos 7"),
               enableAutoScale = TRUE,
-              autoScaleFormula = autoscaleFormula)
+              autoScaleFormula = autoscaleFormula,
+              autoScaleEvaluationInterval = "PT5M",
+              maxTasksPerNode = maxTasksPerNode)
 
   size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
 
@@ -92,10 +104,6 @@ resizePool <- function(poolId, ...){
 
   if(!is.null(args$autoscaleFormula)){
     autoscaleFormula <- .getFormula(args$autoscaleFormula)
-  }
-
-  if(!is.null(args$targetDedicated)){
-    autoscaleFormula <- sprintf("$TargetDedicated = %i", args$targetDedicated)
   }
 
   body <- list("autoScaleFormula" = autoscaleFormula)

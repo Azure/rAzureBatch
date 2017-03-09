@@ -16,7 +16,7 @@ AUTOSCALE_MAX_CPU_FORMULA <- "$totalNodes =
 AUTOSCALE_QUEUE_FORMULA <- paste0(
   "$samples = $ActiveTasks.GetSamplePercent(TimeInterval_Minute * 15);",
   "$tasks = $samples < 70 ? max(0,$ActiveTasks.GetSample(1)) : max( $ActiveTasks.GetSample(1), avg($ActiveTasks.GetSample(TimeInterval_Minute * 15)));",
-  "$targetVMs = $tasks > 0? $tasks:max(0, $TargetDedicated/2);",
+  "$targetVMs = $tasks > 0? $tasks : max(0, $TargetDedicated/2) + 0.5;",
   "$TargetDedicated = max(%s, min($targetVMs, %s));",
   "$NodeDeallocationOption = taskcompletion;"
 )
@@ -25,36 +25,6 @@ AUTOSCALE_FORMULA = list("WEEKEND" = AUTOSCALE_WEEKEND_FORMULA,
                          "WORKDAY" = AUTOSCALE_WORKDAY_FORMULA,
                          "MAX_CPU" = AUTOSCALE_MAX_CPU_FORMULA,
                          "QUEUE" = AUTOSCALE_QUEUE_FORMULA)
-
-generatePoolConfig <- function(
-  batchName,
-  batchKey,
-  batchUrl,
-  storageName = "",
-  storageKey = "",
-  data = "",
-  packages = "",
-  ...){
-    if(!file.exists(paste0(getwd(), "/", "az_config.json"))){
-      config <- list(batchName = batchName,
-                     batchKey = batchKey,
-                     batchUrl = batchUrl,
-                     storageName = storageName,
-                     storageKey = storageKey,
-                     data = data,
-
-                     vmSize = "STANDARD_A1",
-                     numberOfNodes = 3,
-                     packages = packages,
-                     rootDirectory = getwd(),
-                     verbose = FALSE)
-
-      configJson <- jsonlite::toJSON(config, auto_unbox = TRUE, pretty = TRUE)
-      write(configJson, file=paste0(config$rootDirectory, "/", "az_config.json"))
-
-      print(sprintf("A config file has been generated %s", paste0(config$rootDirectory, "/", "az_config.json")))
-    }
-}
 
 generatePoolConfig <- function(fileName, ...){
   args <- list(...)
@@ -76,7 +46,8 @@ generatePoolConfig <- function(fileName, ...){
         url = batchUrl,
         pool = list(
           name = "myPoolName",
-          vmSize = "STANDARD_A1",
+          vmSize = "Standard_D2_v2",
+          maxTasksPerNode = 1,
           poolSize = list(
             minNodes = 3,
             maxNodes = 10,
@@ -122,10 +93,15 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
     pool$name,
     pool$vmSize,
     autoscaleFormula = .getFormula(pool$poolSize$autoscaleFormula, pool$poolSize$minNodes, pool$poolSize$maxNodes),
+    maxTasksPerNode = pool$maxTasksPerNode,
     raw = TRUE,
     packages = config$batchAccount$rPackages$github)
 
   pool <- getPool(pool$name)
+
+  if(grepl("AuthenticationFailed", response)){
+    stop("Check your credentials and try again.");
+  }
 
   if(grepl("The specified pool already exists.", response)){
     print("The specified pool already exists. Will use existing pool.")
@@ -179,9 +155,14 @@ getPoolWorkers <- function(poolId, ...){
 }
 
 waitForNodesToComplete <- function(poolId, timeout, ...){
-  print("Booting compute nodes. . . Please wait. . . There are currently no nodes in the pool. . .")
+  print("Booting compute nodes. . . ")
 
   args <- list(...)
+
+  if(!args$targetDedicated){
+    stop("Pool's current target dedicated not calculated. Please try again.")
+  }
+
   numOfNodes <- args$targetDedicated
 
   pb <- txtProgressBar(min = 0, max = numOfNodes, style = 3)

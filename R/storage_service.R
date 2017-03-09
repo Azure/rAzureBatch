@@ -143,7 +143,7 @@ listBlobs <- function(containerName, sasToken = list()){
   }
 }
 
-listContainer <- function(){
+listContainers <- function(){
   storageCredentials <- getStorageCredentials()
 
   query <- list('comp' = "list")
