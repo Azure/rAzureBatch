@@ -4,7 +4,7 @@ getStorageCredentials <- function(configName = "az_config.json", ...){
   config <- getOption("az_config")
 
   if(!is.null(config) && !is.null(config$storageAccount)){
-    storageAccount <- config$batchAccount$storageAccount
+    storageAccount <- config$storageAccount
     credentials <- StorageCredentials$new(name=storageAccount$name, key=storageAccount$key)
   }
   else{
