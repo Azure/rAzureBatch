@@ -14,20 +14,21 @@ addTask <- function(jobId, taskId = "default", ...){
 
   envFile <- paste0(taskId, ".rds")
   saveRDS(.doAzureBatchGlobals, file = envFile)
-  uploadData(jobId, paste0(getwd(), "/", envFile))
+  uploadBlob(jobId, paste0(getwd(), "/", envFile))
   file.remove(envFile)
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
 
   taskPrep <- .getInstallationCommand(packages)
-  rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s > %s.Rout", "worker.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, taskId)
+  rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s > %s.txt", "worker.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, taskId)
 
   resultFile <- paste0(taskId, "-result", ".rds")
   autoUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource result/%s", storageCredentials$name, jobId, resultFile, resultFile)
   stdoutUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s $AZ_BATCH_TASK_DIR/%s --upload --saskey $BLOBXFER_SASKEY --remoteresource %s", storageCredentials$name, jobId, "stdout.txt", paste0("stdout/", taskId, "-stdout.txt"))
   stderrUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s $AZ_BATCH_TASK_DIR/%s --upload --saskey $BLOBXFER_SASKEY --remoteresource %s", storageCredentials$name, jobId, "stderr.txt", paste0("stderr/", taskId, "-stderr.txt"))
+  logCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource logs/%s", storageCredentials$name, jobId, paste0(taskId, ".txt"), paste0(taskId, ".txt"))
 
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", rCommand, autoUploadCommand, stdoutUploadCommand, stderrUploadCommand)
+  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", rCommand, autoUploadCommand, stdoutUploadCommand, stderrUploadCommand, logCommand)
   if(taskPrep != ""){
     commands <- c(taskPrep, commands)
   }
@@ -86,7 +87,7 @@ addTaskMerge <- function(jobId, taskId = "default", dependsOn, ...){
 
   envFile <- paste0(taskId, ".rds")
   saveRDS(.doAzureBatchGlobals, file = envFile)
-  uploadData(jobId, paste0(getwd(), "/", envFile))
+  uploadBlob(jobId, paste0(getwd(), "/", envFile))
   file.remove(envFile)
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
