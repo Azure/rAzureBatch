@@ -15,9 +15,9 @@ addJob <- function(jobId, ...){
   commands <- c("ls")
 
   createContainer(jobId)
-  uploadData(jobId, system.file(startupFolderName, "splitter.R", package="rAzureBatch"))
-  uploadData(jobId, system.file(startupFolderName, "worker.R", package="rAzureBatch"))
-  uploadData(jobId, system.file(startupFolderName, "merger.R", package="rAzureBatch"))
+  uploadBlob(jobId, system.file(startupFolderName, "splitter.R", package="rAzureBatch"))
+  uploadBlob(jobId, system.file(startupFolderName, "worker.R", package="rAzureBatch"))
+  uploadBlob(jobId, system.file(startupFolderName, "merger.R", package="rAzureBatch"))
 
   sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
   resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, "splitter.R", sasToken),

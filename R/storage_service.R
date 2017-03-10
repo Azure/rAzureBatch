@@ -29,7 +29,11 @@ StorageCredentials <- setRefClass("StorageCredentials",
                                   ))
 
 callStorageSas <- function(request, credentials, body=NULL, sas_params){
+  currentLocale <- Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "English_United States")
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
+  Sys.setlocale("LC_TIME", currentLocale)
+
   url <- sprintf("https://%s.blob.core.windows.net%s", credentials, request$path)
 
   headers <- request$headers
@@ -182,7 +186,7 @@ createContainer <- function(containerName){
   callStorage(request, storageCredentials)
 }
 
-deleteData <- function(containerName, blobName, sasToken = list(), ...){
+deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
   storageCredentials <- getStorageCredentials()
 
   if(length(sasToken) == 0){
@@ -196,7 +200,7 @@ deleteData <- function(containerName, blobName, sasToken = list(), ...){
   callStorageSas(request, storageCredentials$name, sas_params = sasToken)
 }
 
-uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
+uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
   args <- list(...)
 
   if(!is.null(args$accountName)){
@@ -239,11 +243,11 @@ uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
     callStorageSas(request, name, body=upload_file(fileDirectory), sas_params = sasToken)
   }
   else{
-    uploadChunk(containerName, fileDirectory, sas_params = sasToken, ...)
+    .uploadChunk(containerName, fileDirectory, sas_params = sasToken, ...)
   }
 }
 
-uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
+.uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
   args <- list(...)
 
   storageCredentials <- getStorageCredentials()
@@ -350,11 +354,11 @@ getBlobList <- function(containerName, fileName){
 }
 
 uploadDirectory <- function(storageCredentials, containerName, fileDirectory){
-  files = list.files(fileDirectory, full.names = TRUE)
+  files = list.files(fileDirectory, full.names = TRUE, recursive = TRUE)
 
   for(i in 1:length(files))
   {
-    uploadData(storageCredentials, containerName, files[i])
+    uploadBlob(storageCredentials, containerName, files[i])
   }
 }
 
@@ -383,7 +387,7 @@ downloadBlob <- function(containerName, fileName, sasToken = list()){
   readRDS("temp.rds")
 }
 
-splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
+.splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
   chunks <- split(df, 1:numChunks)
 
   i <- 1
@@ -394,7 +398,7 @@ splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
   }
 }
 
-getChunks <- function(tmpdir = tempdir()){
+.getChunks <- function(tmpdir = tempdir()){
   files <- list.files(tempdir(), pattern = ".csv", full.names = TRUE)
   results <- lapply(files, function(x){read.csv(x, check.names = FALSE)})
   return(results)

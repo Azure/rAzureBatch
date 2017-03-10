@@ -32,7 +32,10 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   args <- list(...)
   contentType = args$contentType
 
+  currentLocale <- Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "English_United States")
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
+  Sys.setlocale("LC_TIME", currentLocale)
 
   headers <- request$headers
   headers['ocp-date'] <- requestdate
