@@ -100,10 +100,15 @@ getPool <- function(poolId){
 resizePool <- function(poolId, ...){
   batchCredentials = getBatchCredentials()
   args = list(...)
-  autoscaleFormula <- ""
 
+  autoscaleFormula <- ""
   if(!is.null(args$autoscaleFormula)){
     autoscaleFormula <- .getFormula(args$autoscaleFormula)
+  }
+
+  autoscaleInterval <- ""
+  if(!is.null(args$autoscaleInterval)){
+    autoscaleFormula <- .getFormula(args$autoscaleInterval)
   }
 
   body <- list("autoScaleFormula" = autoscaleFormula)
