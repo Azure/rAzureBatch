@@ -28,7 +28,7 @@ addTask <- function(jobId, taskId = "default", ...){
   stderrUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s $AZ_BATCH_TASK_DIR/%s --upload --saskey $BLOBXFER_SASKEY --remoteresource %s", storageCredentials$name, jobId, "stderr.txt", paste0("stderr/", taskId, "-stderr.txt"))
   logsCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource logs/%s", storageCredentials$name, jobId, paste0(taskId, ".txt"), paste0(taskId, ".txt"))
 
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", rCommand, autoUploadCommand, stdoutUploadCommand, stderrUploadCommand, logCommand)
+  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", rCommand, autoUploadCommand, stdoutUploadCommand, stderrUploadCommand, logsCommand)
   if(taskPrep != ""){
     commands <- c(taskPrep, commands)
   }
