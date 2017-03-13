@@ -66,10 +66,14 @@ getJob <- function(jobId){
 deleteJob <- function(jobId){
   batchCredentials <- getBatchCredentials()
 
+  headers <- c()
+  headers['Content-Length'] <- '0'
+  
   request <- AzureRequest$new(
     method = "DELETE",
     path = paste0("/jobs/", jobId),
-    query = list("api-version" = apiVersion)
+    query = list("api-version" = apiVersion),
+    headers = headers
   )
 
   callBatchService(request, batchCredentials)
