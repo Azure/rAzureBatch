@@ -67,7 +67,10 @@ callStorageSas <- function(request, credentials, body=NULL, sas_params){
   stop_for_status(response)
 }
 
-callStorage <- function(request, credentials, body=NULL){
+callStorage <- function(request, credentials, body=NULL, ...){
+  args <- list(...)
+  contentType = args$contentType
+  
   stringToSign <- createSignature(request$method, request$headers)
 
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
@@ -121,8 +124,13 @@ callStorage <- function(request, credentials, body=NULL){
   else{
     response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
   }
-
-  stop_for_status(response)
+  
+  if(!is.null(contentType) && contentType){
+    content(response, as = "text")
+  }
+  else{
+    content(response)
+  }
 }
 
 listBlobs <- function(containerName, sasToken = list()){
@@ -173,7 +181,14 @@ deleteContainer <- function(containerName){
   callStorage(request, storageCredentials)
 }
 
-createContainer <- function(containerName){
+createContainer <- function(containerName, ...){
+  args <- list(...)
+  
+  raw <- FALSE
+  if(!is.null(args$raw)){
+    raw <- args$raw
+  }
+  
   storageCredentials <- getStorageCredentials()
 
   query <- list('restype' = "container")
@@ -183,7 +198,7 @@ createContainer <- function(containerName){
     path = paste0("/", containerName),
     query = query)
 
-  callStorage(request, storageCredentials)
+  callStorage(request, storageCredentials, contentType = raw)
 }
 
 deleteBlob <- function(containerName, blobName, sasToken = list(), ...){

@@ -31,7 +31,7 @@
   commandLine <- sprintf("/bin/bash -c \"set -e; set -o pipefail; %s wait\"", paste0(paste(commands, sep = " ", collapse = "; "),"; "))
 }
 
-.getFormula <- function(formulaName, min, max){
+getAutoscaleFormula <- function(formulaName, min, max){
   formulas <- names(AUTOSCALE_FORMULA)
 
   if(formulaName == formulas[1]){
