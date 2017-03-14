@@ -6,7 +6,7 @@ addPool <- function(poolId, vmSize, ...){
     raw <- args$raw
   }
 
-  packages <- c()
+  packages <- ""
   if(!is.null(args$packages)){
     packages <- args$packages
   }
@@ -29,7 +29,7 @@ addPool <- function(poolId, vmSize, ...){
                 "export PATH=/anaconda/envs/py35/bin:$PATH",
                 "sudo env PATH=$PATH pip install --no-dependencies blobxfer")
 
-  commands <- paste0(.linuxWrapCommands(commands), ";", .getGithubInstallationCommand(packages))
+  commands <- paste0(.linuxWrapCommands(commands), ";", packages)
 
   body = list(vmSize = vmSize,
               id = poolId,

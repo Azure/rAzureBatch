@@ -70,7 +70,7 @@ callStorageSas <- function(request, credentials, body=NULL, sas_params){
 callStorage <- function(request, credentials, body=NULL, ...){
   args <- list(...)
   contentType = args$contentType
-  
+
   stringToSign <- createSignature(request$method, request$headers)
 
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
@@ -101,7 +101,7 @@ callStorage <- function(request, credentials, body=NULL, ...){
   authString<-paste0("SharedKey ", credentials$name, ":", credentials$signString(stringToSign))
 
   headers['Authorization'] <- authString
-  requestHeaders<-add_headers(.headers = headers)
+  requestHeaders<-add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.0.1")
 
   config <- getOption("az_config")
   if(!is.null(config) && !is.null(config$settings)){
@@ -124,7 +124,7 @@ callStorage <- function(request, credentials, body=NULL, ...){
   else{
     response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
   }
-  
+
   if(!is.null(contentType) && contentType){
     content(response, as = "text")
   }
@@ -183,12 +183,12 @@ deleteContainer <- function(containerName){
 
 createContainer <- function(containerName, ...){
   args <- list(...)
-  
+
   raw <- FALSE
   if(!is.null(args$raw)){
     raw <- args$raw
   }
-  
+
   storageCredentials <- getStorageCredentials()
 
   query <- list('restype' = "container")

@@ -64,7 +64,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
 
   headers['Authorization'] <- authString
 
-  requestHeaders <- add_headers(.headers = headers, "User-Agent"="doAzureBatchR/0.0.1")
+  requestHeaders <- add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.0.1")
 
   response <- ""
 
@@ -76,27 +76,17 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
                     config$settings$verbose,
                     getOption("verbose"))
 
+  write <- if(writeFlag) { write_memory() } else { NULL }
+  verboseMode <- if(!is.null(config) && !is.null(config$settings) && config$settings$verbose){ verbose() } else { NULL }
+
   if(verbose){
     print(stringToSign)
     print(url)
     print(paste0("Auth String: ", authString))
     print(requestHeaders)
+  }
 
-    if(writeFlag){
-      response <- VERB(request$method, url, config = requestHeaders, write_memory(), verbose(), query = request$query, body=body, encode="json")
-    }
-    else{
-      response <- VERB(request$method, url, config = requestHeaders, verbose(), query = request$query, body=body, encode="json")
-    }
-  }
-  else{
-    if(writeFlag){
-      response <- VERB(request$method, url, config = requestHeaders, write_memory(), query = request$query, body=body, encode="json")
-    }
-    else{
-      response <- VERB(request$method, url, config = requestHeaders, query = request$query, body=body, encode="json")
-    }
-  }
+  response <- VERB(request$method, url, config = requestHeaders, verboseMode, write, query = request$query, body=body, encode="json")
 
   if(!is.null(contentType) && contentType){
     content(response, as = "text")

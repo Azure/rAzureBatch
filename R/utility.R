@@ -41,7 +41,7 @@ getAutoscaleFormula <- function(formulaName, min, max){
     return(sprintf(AUTOSCALE_WORKDAY_FORMULA, min, max))
   }
   else if(formulaName == formulas[3]){
-    return(AUTOSCALE_MAX_CPU_FORMULA)
+    return(sprintf(AUTOSCALE_MAX_CPU_FORMULA, min))
   }
   else if(formulaName == formulas[4]){
     return(sprintf(AUTOSCALE_QUEUE_FORMULA, min, max))

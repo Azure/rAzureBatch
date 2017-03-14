@@ -1,3 +1,17 @@
+#' Add a job to the specified pool.
+#'
+#' @param jobId A string that uniquely identifies the job within the account.
+#' @param ... Further named parameters
+#' \itemize{
+#'  \item{"resourceFiles"}: {A list of files that the Batch service will download to the compute node before running the command line.}
+#'  \item{"args"}: {Arguments in the foreach parameters that will be used for the task running.}
+#'  \item{"packages"}: {A list of packages that the Batch service will download to the compute node.}
+#'  \item{"envir"}: {The R environment that the task will run under.}
+#'}
+#' @return The request to the Batch service was successful.
+#' @examples
+#' addJob(job-001, packages = c("devtools", "httr"))
+#' @export
 addJob <- function(jobId, ...){
   headers <- character()
   args <- list(...)
@@ -51,6 +65,14 @@ addJob <- function(jobId, ...){
   callBatchService(request, batchCredentials, body, contentType = raw)
 }
 
+#' Gets information about the specified job.
+#'
+#' @param jobId The id of the job.
+#'
+#' @return A response containing the job.
+#' @examples
+#' getJob(job-001)
+#' @export
 getJob <- function(jobId){
   batchCredentials <- getBatchCredentials()
 
@@ -63,12 +85,20 @@ getJob <- function(jobId){
   callBatchService(request, batchCredentials)
 }
 
+#' Deletes a job.
+#' @details Deleting a job also deletes all tasks that are part of that job, and all job statistics. This also overrides the retention period for task data; that is, if the job contains tasks which are still retained on compute nodes, the Batch services deletes those tasks' working directories and all their contents.
+#' @param jobId The id of the job to delete..
+#'
+#' @return The request to the Batch service was successful.
+#' @examples
+#' deleteJob(job-001)
+#' @export
 deleteJob <- function(jobId){
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
   headers['Content-Length'] <- '0'
-  
+
   request <- AzureRequest$new(
     method = "DELETE",
     path = paste0("/jobs/", jobId),
@@ -79,6 +109,11 @@ deleteJob <- function(jobId){
   callBatchService(request, batchCredentials)
 }
 
+#' Updates the properties of the specified job.
+#'
+#' @param jobId The id of the job.
+#' @return The request to the Batch service was successful.
+#' @export
 updateJob <- function(jobId, ...){
   batchCredentials <- getBatchCredentials()
 
