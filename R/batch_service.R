@@ -33,9 +33,20 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   contentType = args$contentType
 
   currentLocale <- Sys.getlocale("LC_TIME")
-  Sys.setlocale("LC_TIME", "en_US.UTF-8")
+
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
-  Sys.setlocale("LC_TIME", currentLocale)
+
+  if(Sys.info()['sysname'] == 'Windows'){
+    Sys.setlocale("LC_TIME", "English_United States.1252")
+    requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
+    Sys.setlocale("LC_TIME", currentLocale)
+  }
+
+  if(Sys.info()['sysname'] == 'Linux'){
+    Sys.setlocale("LC_TIME", "en_US.UTF-8")
+    requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
+    Sys.setlocale("LC_TIME", currentLocale)
+  }
 
   headers <- request$headers
   headers['ocp-date'] <- requestdate

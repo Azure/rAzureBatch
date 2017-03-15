@@ -13,6 +13,7 @@ AZ_BATCH_TASK_WORKING_DIR <- args[1]
 AZ_BATCH_TASK_ENV <- args[2]
 N <- args[3]
 JOB_ID <- args[4]
+numOfTasks <- args[5]
 
 wd <- paste0(AZ_BATCH_TASK_WORKING_DIR, "/", AZ_BATCH_TASK_ENV)
 azbatchenv <- readRDS(wd)
@@ -22,13 +23,23 @@ for(package in azbatchenv$packages){
 }
 parent.env(azbatchenv$exportenv) <- globalenv()
 
-results <- vector("list", N)
-for(i in 1:N){
-  task_result <- paste0(AZ_BATCH_TASK_WORKING_DIR, "/result/", JOB_ID, "-task", i, "-result.rds")
-  results[i] <- readRDS(task_result)
-}
+results <- vector("list", numOfTasks)
+count <- 1
+tryCatch({
+  for(i in 1:N){
+    task_result <- paste0(AZ_BATCH_TASK_WORKING_DIR, "/result/", JOB_ID, "-task", i, "-result.rds")
+    task <- readRDS(task_result)
 
-file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]
-saveRDS(results, file = paste0(AZ_BATCH_TASK_WORKING_DIR, "/", file_result_name, "-result.rds"))
+    for(t in 1 : length(task)){
+      results[count] <- task[t]
+      count <- count + 1
+    }
+  }
+
+  file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]
+  saveRDS(results, file = paste0(AZ_BATCH_TASK_WORKING_DIR, "/", file_result_name, "-result.rds"))
+}, error = function(e) {
+  print(e)
+})
 
 quit(save = "yes", status = 0, runLast = FALSE)
