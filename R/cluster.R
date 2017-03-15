@@ -107,7 +107,6 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
   setPoolOption(fileName, fullName)
   config <- getOption("az_config")
   pool <- config$batchAccount$pool
-  targetDedicated <- pool$poolSize$targetDedicated
 
   if(!is.null(pool$poolSize$targetDedicated)){
     response <- addPool(
@@ -128,6 +127,10 @@ registerPool <- function(fileName = "az_config.json", fullName = FALSE, waitForP
 
   if(grepl("The specified pool already exists.", response)){
     print("The specified pool already exists. Will use existing pool.")
+  }
+  
+  if(grepl("AuthenticationFailed", response)){
+    print("Check your credentials and try again.")
   }
 
   pool <- getPool(pool$name)
