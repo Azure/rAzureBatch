@@ -29,7 +29,11 @@ StorageCredentials <- setRefClass("StorageCredentials",
                                   ))
 
 callStorageSas <- function(request, credentials, body=NULL, sas_params){
+  currentLocale <- Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "en_US.UTF-8")
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
+  Sys.setlocale("LC_TIME", currentLocale)
+
   url <- sprintf("https://%s.blob.core.windows.net%s", credentials, request$path)
 
   headers <- request$headers
@@ -63,11 +67,17 @@ callStorageSas <- function(request, credentials, body=NULL, sas_params){
   stop_for_status(response)
 }
 
-callStorage <- function(request, credentials, body=NULL){
+callStorage <- function(request, credentials, body=NULL, ...){
+  args <- list(...)
+  contentType = args$contentType
+
   stringToSign <- createSignature(request$method, request$headers)
 
+  currentLocale <- Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "en_US.UTF-8")
   requestdate <- format(Sys.time(), "%a, %d %b %Y %H:%M:%S %Z", tz="GMT")
   url <- sprintf("https://%s.blob.core.windows.net%s", credentials$name, request$path)
+  Sys.setlocale("LC_TIME", currentLocale)
 
   headers <- request$headers
   headers['x-ms-date'] <- requestdate
@@ -94,7 +104,7 @@ callStorage <- function(request, credentials, body=NULL){
   authString<-paste0("SharedKey ", credentials$name, ":", credentials$signString(stringToSign))
 
   headers['Authorization'] <- authString
-  requestHeaders<-add_headers(.headers = headers)
+  requestHeaders<-add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.0.1")
 
   config <- getOption("az_config")
   if(!is.null(config) && !is.null(config$settings)){
@@ -118,7 +128,12 @@ callStorage <- function(request, credentials, body=NULL){
     response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
   }
 
-  stop_for_status(response)
+  if(!is.null(contentType) && contentType){
+    content(response, as = "text")
+  }
+  else{
+    content(response)
+  }
 }
 
 listBlobs <- function(containerName, sasToken = list()){
@@ -143,7 +158,40 @@ listBlobs <- function(containerName, sasToken = list()){
   }
 }
 
-createContainer <- function(containerName){
+listContainers <- function(){
+  storageCredentials <- getStorageCredentials()
+
+  query <- list('comp' = "list")
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/"),
+    query = query)
+
+  callStorage(request, storageCredentials)
+}
+
+deleteContainer <- function(containerName){
+  storageCredentials <- getStorageCredentials()
+
+  query <- list('restype' = "container")
+
+  request <- AzureRequest$new(
+    method = "DELETE",
+    path = paste0("/", containerName),
+    query = query)
+
+  callStorage(request, storageCredentials)
+}
+
+createContainer <- function(containerName, ...){
+  args <- list(...)
+
+  raw <- FALSE
+  if(!is.null(args$raw)){
+    raw <- args$raw
+  }
+
   storageCredentials <- getStorageCredentials()
 
   query <- list('restype' = "container")
@@ -153,11 +201,33 @@ createContainer <- function(containerName){
     path = paste0("/", containerName),
     query = query)
 
-  callStorage(request, storageCredentials)
+  callStorage(request, storageCredentials, contentType = raw)
 }
 
-uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
+deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
   storageCredentials <- getStorageCredentials()
+
+  if(length(sasToken) == 0){
+    sasToken <- constructSas("2016-11-30", "d", "c", containerName, storageCredentials$key)
+  }
+
+  request <- AzureRequest$new(
+    method = "DELETE",
+    path = paste0("/", containerName, "/", blobName))
+
+  callStorageSas(request, storageCredentials$name, sas_params = sasToken)
+}
+
+uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
+  args <- list(...)
+
+  if(!is.null(args$accountName)){
+    name <- args$accountName
+  }
+  else{
+    storageCredentials <- getStorageCredentials()
+    name <- storageCredentials$name
+  }
 
   if(length(sasToken) == 0){
     sasToken <- constructSas("2016-11-30", "rwcl", "c", containerName, storageCredentials$key)
@@ -179,19 +249,25 @@ uploadData <- function(containerName, fileDirectory, sasToken = list(), ...){
     headers['Content-Type'] <- endFile$type
     headers['x-ms-blob-type'] <- 'BlockBlob'
 
+    if(!is.null(args$remoteName)){
+      lastWord <- args$remoteName
+    }
+
     request <- AzureRequest$new(
       method = "PUT",
       path = paste0("/", containerName, "/", lastWord),
       headers = headers)
 
-    callStorageSas(request, storageCredentials$name, body=upload_file(fileDirectory), sas_params = sasToken)
+    callStorageSas(request, name, body=upload_file(fileDirectory), sas_params = sasToken)
   }
   else{
-    uploadChunk(containerName, fileDirectory, sas_params = sasToken)
+    .uploadChunk(containerName, fileDirectory, sas_params = sasToken, ...)
   }
 }
 
-uploadChunk <- function(containerName, fileDirectory, sasToken = list()){
+.uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
+  args <- list(...)
+
   storageCredentials <- getStorageCredentials()
 
   filePath <- strsplit(fileDirectory, "/")
@@ -227,6 +303,10 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list()){
     headers['Content-Length'] <- file.size(file)
     headers['Content-Type'] <- 'text/xml'
     headers['x-ms-blob-type'] <- 'BlockBlob'
+
+    if(!is.null(args$remoteName)){
+      blobName <- args$remoteName
+    }
 
     request <- AzureRequest$new(
       method = "PUT",
@@ -292,11 +372,11 @@ getBlobList <- function(containerName, fileName){
 }
 
 uploadDirectory <- function(storageCredentials, containerName, fileDirectory){
-  files = list.files(fileDirectory, full.names = TRUE)
+  files = list.files(fileDirectory, full.names = TRUE, recursive = TRUE)
 
   for(i in 1:length(files))
   {
-    uploadData(storageCredentials, containerName, files[i])
+    uploadBlob(storageCredentials, containerName, files[i])
   }
 }
 
@@ -325,7 +405,7 @@ downloadBlob <- function(containerName, fileName, sasToken = list()){
   readRDS("temp.rds")
 }
 
-splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
+.splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
   chunks <- split(df, 1:numChunks)
 
   i <- 1
@@ -336,7 +416,7 @@ splitChunks <- function(df, numChunks, pattern = "file", tmpdir = tempdir()){
   }
 }
 
-getChunks <- function(tmpdir = tempdir()){
+.getChunks <- function(tmpdir = tempdir()){
   files <- list.files(tempdir(), pattern = ".csv", full.names = TRUE)
   results <- lapply(files, function(x){read.csv(x, check.names = FALSE)})
   return(results)

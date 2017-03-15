@@ -6,31 +6,41 @@ addPool <- function(poolId, vmSize, ...){
     raw <- args$raw
   }
 
-  packages <- c()
+  packages <- ""
   if(!is.null(args$packages)){
     packages <- args$packages
   }
 
   autoscaleFormula <- ""
   if(!is.null(args$autoscaleFormula)){
-    autoscaleFormula <- autoscaleFormula
+    autoscaleFormula <- args$autoscaleFormula
   }
 
-  if(!is.null(args$targetDedicated) || !args$targetDedicated == -1){
-    autoscaleFormula <- sprintf("$TargetDedicated = %i", args$targetDedicated)
+  maxTasksPerNode <- ""
+  if(!is.null(args$maxTasksPerNode)){
+    maxTasksPerNode <- args$maxTasksPerNode
   }
 
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
   batchCredentials <- getBatchCredentials()
 
-  commands <- c(.getGithubInstallationCommand(packages))
+  commands <- c("sed -i -e 's/Defaults    requiretty.*/ #Defaults    requiretty/g' /etc/sudoers",
+                "export PATH=/anaconda/envs/py35/bin:$PATH",
+                "sudo env PATH=$PATH pip install --no-dependencies blobxfer")
+
+  commands <- paste0(.linuxWrapCommands(commands), ";", packages)
 
   body = list(vmSize = vmSize,
               id = poolId,
               startTask = list(
                 commandLine = commands,
-                runElevated = TRUE,
+                userIdentity = list(
+                  autoUser = list(
+                    scope = "task",
+                    elevationLevel = "admin"
+                  )
+                ),
                 waitForSuccess = TRUE
               ),
               virtualMachineConfiguration = list(
@@ -40,7 +50,9 @@ addPool <- function(poolId, vmSize, ...){
                                     version = "latest"),
                 nodeAgentSKUId ="batch.node.centos 7"),
               enableAutoScale = TRUE,
-              autoScaleFormula = autoscaleFormula)
+              autoScaleFormula = autoscaleFormula,
+              autoScaleEvaluationInterval = "PT5M",
+              maxTasksPerNode = maxTasksPerNode)
 
   size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
 
@@ -88,14 +100,15 @@ getPool <- function(poolId){
 resizePool <- function(poolId, ...){
   batchCredentials = getBatchCredentials()
   args = list(...)
-  autoscaleFormula <- ""
 
+  autoscaleFormula <- ""
   if(!is.null(args$autoscaleFormula)){
-    autoscaleFormula <- args$autoscaleFormula
+    autoscaleFormula <- .getFormula(args$autoscaleFormula)
   }
 
-  if(!is.null(args$targetDedicated)){
-    autoscaleFormula <- sprintf("$TargetDedicated = %i", args$targetDedicated)
+  autoscaleInterval <- ""
+  if(!is.null(args$autoscaleInterval)){
+    autoscaleFormula <- .getFormula(args$autoscaleInterval)
   }
 
   body <- list("autoScaleFormula" = autoscaleFormula)

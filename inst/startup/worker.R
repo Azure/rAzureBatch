@@ -32,7 +32,9 @@ result <- lapply(azbatchenv$argsList, function(args){
       assign(n, args[[n]], pos=azbatchenv$exportenv))
 
     eval(azbatchenv$expr, azbatchenv$exportenv)
-  }, error = function(e) e)
+  }, error = function(e) {
+    print(e)
+  })
 })
 
 file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]

@@ -1,10 +1,22 @@
 Package: rAzureBatch
 Type: Package
 Title: rAzureBatch
-Version: 0.1.3
+Version: 0.2.0
 Author: Brian Hoang
 Maintainer: Brian Hoang <brhoan@microsoft.com>
-Description: The project is for data experts who use R at scale. The project comes together as an R package that will allow users to run their R code in parallel across a cluster hosted on Azure. The cluster will be created and maintained by Azure Batch and, for the initial version, will be a public/communal pool. The orchestration for each job that needs to be parallelized in the cluster will be done by a middle layer that schedules each request.
+Description: The project is for data experts who use R at scale. The project
+    comes together as an R package that will allow users to run their R code in
+    parallel across a cluster hosted on Azure. The cluster will be created and
+    maintained by Azure Batch and, for the initial version, will be a public/
+    communal pool. The orchestration for each job that needs to be parallelized in
+    the cluster will be done by a middle layer that schedules each request.
 License: Microsoft Corporation
 LazyData: TRUE
-Depends: httr (>= 1.2.1), rjson (>= 0.2.15), RCurl (>= 1.95-4.8), digest (>=  0.6.9)
+Depends:
+    httr (>= 1.2.1),
+    rjson (>= 0.2.15),
+    RCurl (>= 1.95-4.8),
+    digest (>=  0.6.9)
+Suggests:
+    testthat
+RoxygenNote: 5.0.1

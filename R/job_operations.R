@@ -1,56 +1,27 @@
-addJob <- function(jobId, poolId, splitter, expr, merger, container, inputFile, configName, ...){
-  headers <- character()
-
-  batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
-
-  commands <- c(.getInstallationCommand(configName))
-
-  my_env = as.environment(as.list(.GlobalEnv, all.names = TRUE))
-  my_env[["SPLITTER"]] <- splitter
-  my_env[["MERGER"]] <- merger
-  my_env[["WORKER"]] <- expr
-
-  envFileName <- "environment.RData"
-  saveRDS(my_env, file = envFileName)
-
-  sasToken <- constructSas("2016-11-30", "rwcl", "c", container, storageCredentials$key)
-
-  uploadData(container, paste0(getwd(), "/", envFileName), sasToken)
-
-  resourceFile <- generateSasUrl(storageCredentials$name, container, envFileName, sasToken)
-
-  uploadData(container, system.file("startup", "splitter.R", package="rAzureBatch"), sasToken)
-
-  body = list(id=jobId,
-              poolInfo=list("poolId"=poolId),
-              jobPreparationTask = list(
-                commandLine = .linuxWrapCommands(commands),
-                runElevated = TRUE,
-                resourceFiles <- list(resourceFile)
-              ))
-
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
-
-  headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
-
-  request <- AzureRequest$new(
-    method = "POST",
-    path = "/jobs",
-    query = list("api-version" = apiVersion),
-    headers = headers
-  )
-
-  callBatchService(request, batchCredentials, body)
-
-  addTask(jobId, container, inputFile)
-}
-
+#' Add a job to the specified pool.
+#'
+#' @param jobId A string that uniquely identifies the job within the account.
+#' @param ... Further named parameters
+#' \itemize{
+#'  \item{"resourceFiles"}: {A list of files that the Batch service will download to the compute node before running the command line.}
+#'  \item{"args"}: {Arguments in the foreach parameters that will be used for the task running.}
+#'  \item{"packages"}: {A list of packages that the Batch service will download to the compute node.}
+#'  \item{"envir"}: {The R environment that the task will run under.}
+#'}
+#' @return The request to the Batch service was successful.
+#' @examples
+#' addJob(job-001, packages = c("devtools", "httr"))
+#' @export
 addJob <- function(jobId, ...){
   headers <- character()
   args <- list(...)
   config <- args$config
+  resourceFiles <- args$resourceFiles
+
+  raw <- FALSE
+  if(!is.null(args$raw)){
+    raw <- args$raw
+  }
 
   pool <- config$batchAccount$pool
   stopifnot(!is.null(pool))
@@ -59,32 +30,18 @@ addJob <- function(jobId, ...){
   storageCredentials <- getStorageCredentials()
 
   packages <- args$packages
-  packageVersion <- "AzureBatch_0.1.3.tar.gz"
-  commands <- c("sed -i -e 's/Defaults    requiretty.*/ #Defaults    requiretty/g' /etc/sudoers",
-                "export PATH=/anaconda/envs/py35/bin:$PATH",
-                "sudo env PATH=$PATH pip install --upgrade pip",
-                "sudo env PATH=$PATH pip install azure-batch",
-                "sudo env PATH=$PATH pip install azure-storage",
-                "sudo env PATH=$PATH pip install --upgrade blobxfer",
-                sprintf("sudo R CMD INSTALL $AZ_BATCH_JOB_PREP_WORKING_DIR/%s", packageVersion))
-
-  createContainer(jobId)
-  uploadData(jobId, system.file("startup", "splitter.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", "worker.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", "merger.R", package="rAzureBatch"))
-  uploadData(jobId, system.file("startup", packageVersion, package="rAzureBatch"))
-
-  sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
-  resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, "splitter.R", sasToken),
-                        generateResourceFile(storageCredentials$name, jobId, "worker.R", sasToken),
-                        generateResourceFile(storageCredentials$name, jobId, "merger.R", sasToken),
-                        generateResourceFile(storageCredentials$name, jobId, packageVersion, sasToken))
+  commands <- c("ls")
 
   body = list(id=jobId,
               poolInfo=list("poolId" = pool$name),
               jobPreparationTask = list(
                 commandLine = .linuxWrapCommands(commands),
-                runElevated = TRUE,
+                userIdentity = list(
+                  autoUser = list(
+                    scope = "task",
+                    elevationLevel = "admin"
+                  )
+                ),
                 waitForSuccess = TRUE,
                 resourceFiles = resourceFiles,
                 constraints = list(
@@ -105,9 +62,17 @@ addJob <- function(jobId, ...){
     headers = headers
   )
 
-  callBatchService(request, batchCredentials, body)
+  callBatchService(request, batchCredentials, body, contentType = raw)
 }
 
+#' Gets information about the specified job.
+#'
+#' @param jobId The id of the job.
+#'
+#' @return A response containing the job.
+#' @examples
+#' getJob(job-001)
+#' @export
 getJob <- function(jobId){
   batchCredentials <- getBatchCredentials()
 
@@ -120,18 +85,35 @@ getJob <- function(jobId){
   callBatchService(request, batchCredentials)
 }
 
+#' Deletes a job.
+#' @details Deleting a job also deletes all tasks that are part of that job, and all job statistics. This also overrides the retention period for task data; that is, if the job contains tasks which are still retained on compute nodes, the Batch services deletes those tasks' working directories and all their contents.
+#' @param jobId The id of the job to delete..
+#'
+#' @return The request to the Batch service was successful.
+#' @examples
+#' deleteJob(job-001)
+#' @export
 deleteJob <- function(jobId){
   batchCredentials <- getBatchCredentials()
+
+  headers <- c()
+  headers['Content-Length'] <- '0'
 
   request <- AzureRequest$new(
     method = "DELETE",
     path = paste0("/jobs/", jobId),
-    query = list("api-version" = apiVersion)
+    query = list("api-version" = apiVersion),
+    headers = headers
   )
 
   callBatchService(request, batchCredentials)
 }
 
+#' Updates the properties of the specified job.
+#'
+#' @param jobId The id of the job.
+#' @return The request to the Batch service was successful.
+#' @export
 updateJob <- function(jobId, ...){
   batchCredentials <- getBatchCredentials()
 
