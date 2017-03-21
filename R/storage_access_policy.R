@@ -16,15 +16,17 @@ signed_services <- 'ss'
 signed_ip <- 'si'
 signed_version <- 'sv'
 
-constructSas <- function(expiry, permission, sr, path, account_key){
+constructSas <- function(permission, sr, path, account_key,
+                         start = Sys.time() - 60*60*24*1,
+                         end = Sys.time() + 60*60*24*2){
   myList <- list()
   query = c()
 
-  startTime <- as.POSIXlt(Sys.time() - 60*60*24*1, "UTC", "%Y-%m-%dT%H:%M:%S")
-  startTime <- paste0(strftime(startTime, "%Y-%m-%dT%TZ"))
+  startTime <- as.POSIXlt(start, "UTC", "%Y-%m-%dT%H:%M:%S")
+  startTime <- paste0(strftime(startTime, "%Y-%m-%dT%H:%I:%SZ"))
 
-  endTime <- as.POSIXlt(Sys.time() + 60*60*24*2, "UTC", "%Y-%m-%dT%H:%M:%S")
-  endTime <- paste0(strftime(endTime, "%Y-%m-%dT%TZ"))
+  endTime <- as.POSIXlt(end, "UTC", "%Y-%m-%dT%H:%M:%S")
+  endTime <- paste0(strftime(endTime, "%Y-%m-%dT%H:%I:%SZ"))
 
   query[signed_start] <- startTime
   query[signed_expiry] <- endTime
