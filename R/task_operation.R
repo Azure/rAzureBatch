@@ -31,7 +31,7 @@ addTask <- function(jobId, taskId = "default", ...){
   uploadBlob(jobId, paste0(getwd(), "/", envFile))
   file.remove(envFile)
 
-  sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
+  sasToken <- constructSas("r", "c", jobId, storageCredentials$key)
 
   taskPrep <- .getInstallationCommand(packages)
   rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s > %s.txt", "worker.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, taskId)
@@ -53,7 +53,7 @@ addTask <- function(jobId, taskId = "default", ...){
     resourceFiles <- c(resourceFiles, argResourceFiles)
   }
 
-  sasToken <- constructSas("2016-11-30", "rwcl", "c", jobId, storageCredentials$key)
+  sasToken <- constructSas("rwcl", "c", jobId, storageCredentials$key)
   sasQuery <- generateSasUrl(sasToken)
 
   setting = list(name = "BLOBXFER_SASKEY",
@@ -105,7 +105,7 @@ addTaskMerge <- function(jobId, taskId = "default", dependsOn, ...){
   uploadBlob(jobId, paste0(getwd(), "/", envFile))
   file.remove(envFile)
 
-  sasToken <- constructSas("2016-11-30", "r", "c", jobId, storageCredentials$key)
+  sasToken <- constructSas("r", "c", jobId, storageCredentials$key)
 
   taskPrep <- .getInstallationCommand(packages)
   rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s %s %s %s > %s.txt", "merger.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, length(dependsOn), jobId, numOfTasks, taskId)
@@ -123,7 +123,7 @@ addTaskMerge <- function(jobId, taskId = "default", dependsOn, ...){
 
   resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, envFile, sasToken))
 
-  sasToken <- constructSas("2016-11-30", "rwcl", "c", jobId, storageCredentials$key)
+  sasToken <- constructSas("rwcl", "c", jobId, storageCredentials$key)
   sasQuery <- generateSasUrl(sasToken)
 
   setting = list(name = "BLOBXFER_SASKEY",

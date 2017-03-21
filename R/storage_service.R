@@ -134,7 +134,7 @@ listBlobs <- function(containerName, sasToken = list()){
   storageCredentials <- getStorageCredentials()
 
   if(length(sasToken) == 0){
-    sasToken <- constructSas("2016-11-30", "rl", "c", containerName, storageCredentials$key)
+    sasToken <- constructSas("rl", "c", containerName, storageCredentials$key)
   }
 
   query <- list('restype' = "container", 'comp' = "list")
@@ -224,13 +224,8 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
   }
 
   if(length(sasToken) == 0){
-    sasToken <- constructSas("2016-11-30", "rwcl", "c", containerName, storageCredentials$key)
+    sasToken <- constructSas("rwcl", "c", containerName, storageCredentials$key)
   }
-
-  #fix this later
-  filePath <- strsplit(fileDirectory, "/")
-  filePath <- unlist(filePath)
-  lastWord <- filePath[length(filePath)]
 
   fileSize <- file.size(fileDirectory)
 
@@ -243,13 +238,14 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
     headers['Content-Type'] <- endFile$type
     headers['x-ms-blob-type'] <- 'BlockBlob'
 
+    blobName <- basename(fileDirectory)
     if(!is.null(args$remoteName)){
-      lastWord <- args$remoteName
+      blobName <- args$remoteName
     }
 
     request <- AzureRequest$new(
       method = "PUT",
-      path = paste0("/", containerName, "/", lastWord),
+      path = paste0("/", containerName, "/", blobName),
       headers = headers)
 
     callStorageSas(request, name, body=upload_file(fileDirectory), sas_params = sasToken)
@@ -274,14 +270,13 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
   filePath <- unlist(filePath)
   blobName <- filePath[length(filePath)]
 
+  blobName <- basename(fileDirectory)
   if(!is.null(args$remoteName)){
     blobName <- args$remoteName
   }
 
-  parallelThreads <- 1
   if(!is.null(args$parallelThreads)){
     parallelThreads <- args$parallelThreads
-    library(doParallel)
     doParallel::registerDoParallel(cores = parallelThreads)
 
     currentChunk <- 0
@@ -341,6 +336,9 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
 
       currentChunk <- currentChunk + count
     }
+  }
+  else{
+
   }
 
   str <- ""
@@ -414,7 +412,7 @@ downloadBlob <- function(containerName, fileName, sasToken = list()){
     storageName <- storageCredentials$name
 
     if(length(sasToken) == 0){
-      sasToken <- constructSas("2016-11-30", "rwcl", "c", containerName, storageCredentials$key)
+      sasToken <- constructSas("rwcl", "c", containerName, storageCredentials$key)
     }
   }
 
