@@ -17,50 +17,17 @@ addTask <- function(jobId, taskId = "default", ...){
   storageCredentials <- getStorageCredentials()
 
   args <- list(...)
-  .doAzureBatchGlobals <- args$envir
-  argsList <- args$args
-  packages <- args$packages
-  argResourceFiles <- args$resourceFiles
+  environmentSettings <- args$environmentSettings
+  resourceFiles <- args$resourceFiles
+  commandLine <- args$commandLine
+  dependsOn <- args$dependsOn
 
-  if(!is.null(argsList)){
-    assign('argsList', argsList, .doAzureBatchGlobals)
+  if(is.null(commandLine)){
+    stop("Task requires a command line.")
   }
-
-  envFile <- paste0(taskId, ".rds")
-  saveRDS(.doAzureBatchGlobals, file = envFile)
-  uploadBlob(jobId, paste0(getwd(), "/", envFile))
-  file.remove(envFile)
-
-  sasToken <- constructSas("r", "c", jobId, storageCredentials$key)
-
-  taskPrep <- .getInstallationCommand(packages)
-  rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s > %s.txt", "worker.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, taskId)
-
-  resultFile <- paste0(taskId, "-result", ".rds")
-  autoUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource result/%s", storageCredentials$name, jobId, resultFile, resultFile)
-  stdoutUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s $AZ_BATCH_TASK_DIR/%s --upload --saskey $BLOBXFER_SASKEY --remoteresource %s", storageCredentials$name, jobId, "stdout.txt", paste0("stdout/", taskId, "-stdout.txt"))
-  stderrUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s $AZ_BATCH_TASK_DIR/%s --upload --saskey $BLOBXFER_SASKEY --remoteresource %s", storageCredentials$name, jobId, "stderr.txt", paste0("stderr/", taskId, "-stderr.txt"))
-  logsCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource logs/%s", storageCredentials$name, jobId, paste0(taskId, ".txt"), paste0(taskId, ".txt"))
-
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", rCommand, autoUploadCommand, stdoutUploadCommand, stderrUploadCommand, logsCommand)
-  if(taskPrep != ""){
-    commands <- c(taskPrep, commands)
-  }
-
-  resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, envFile, sasToken))
-
-  if(!is.null(argResourceFiles)){
-    resourceFiles <- c(resourceFiles, argResourceFiles)
-  }
-
-  sasToken <- constructSas("rwcl", "c", jobId, storageCredentials$key)
-  sasQuery <- generateSasUrl(sasToken)
-
-  setting = list(name = "BLOBXFER_SASKEY",
-                 value = sasQuery)
 
   body = list(id = taskId,
-              commandLine = .linuxWrapCommands(commands),
+              commandLine = commandLine,
               userIdentity = list(
                 autoUser = list(
                   scope = "task",
@@ -68,78 +35,10 @@ addTask <- function(jobId, taskId = "default", ...){
                 )
               ),
               resourceFiles = resourceFiles,
-              environmentSettings = list(setting))
+              environmentSettings = environmentSettings,
+              dependsOn = dependsOn)
 
-  size <- nchar(rjson::toJSON(body, method="C"))
-
-  headers <- c()
-  headers['Content-Length'] <- size
-  headers['Content-Type'] <- "application/json;odata=minimalmetadata"
-
-  request <- AzureRequest$new(
-    method = "POST",
-    path = paste0("/jobs/", jobId, "/tasks"),
-    query = list("api-version" = apiVersion),
-    headers = headers
-  )
-
-  callBatchService(request, batchCredentials, body)
-}
-
-addTaskMerge <- function(jobId, taskId = "default", dependsOn, ...){
-  batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
-
-  args <- list(...)
-  .doAzureBatchGlobals <- args$envir
-  argsList <- args$args
-  packages <- args$packages
-  numOfTasks <- args$numOfTasks
-
-  if(!is.null(argsList)){
-    assign('argsList', argsList, .doAzureBatchGlobals)
-  }
-
-  envFile <- paste0(taskId, ".rds")
-  saveRDS(.doAzureBatchGlobals, file = envFile)
-  uploadBlob(jobId, paste0(getwd(), "/", envFile))
-  file.remove(envFile)
-
-  sasToken <- constructSas("r", "c", jobId, storageCredentials$key)
-
-  taskPrep <- .getInstallationCommand(packages)
-  rCommand <- sprintf("Rscript --vanilla --verbose $AZ_BATCH_JOB_PREP_WORKING_DIR/%s %s %s %s %s %s > %s.txt", "merger.R", "$AZ_BATCH_TASK_WORKING_DIR", envFile, length(dependsOn), jobId, numOfTasks, taskId)
-
-  resultFile <- paste0(taskId, "-result", ".rds")
-  logsCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource logs/%s", storageCredentials$name, jobId, paste0(taskId, ".txt"), paste0(taskId, ".txt"))
-  autoUploadCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource result/%s", storageCredentials$name, jobId, resultFile, resultFile)
-  downloadCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --download --saskey $BLOBXFER_SASKEY --remoteresource . --include result/*.rds", storageCredentials$name, jobId, "$AZ_BATCH_TASK_WORKING_DIR")
-  logsCommand <- sprintf("env PATH=$PATH blobxfer %s %s %s --upload --saskey $BLOBXFER_SASKEY --remoteresource logs/%s", storageCredentials$name, jobId, paste0(taskId, ".txt"), paste0(taskId, ".txt"))
-
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH", downloadCommand, rCommand, logsCommand, autoUploadCommand)
-  if(taskPrep != ""){
-    commands <- c(taskPrep, commands)
-  }
-
-  resourceFiles <- list(generateResourceFile(storageCredentials$name, jobId, envFile, sasToken))
-
-  sasToken <- constructSas("rwcl", "c", jobId, storageCredentials$key)
-  sasQuery <- generateSasUrl(sasToken)
-
-  setting = list(name = "BLOBXFER_SASKEY",
-                 value = sasQuery)
-
-  body = list(id = taskId,
-              commandLine = .linuxWrapCommands(commands),
-              userIdentity = list(
-                autoUser = list(
-                  scope = "task",
-                  elevationLevel = "admin"
-                )
-              ),
-              resourceFiles = resourceFiles,
-              environmentSettings = list(setting),
-              dependsOn = list(taskIds = dependsOn))
+  body <- Filter(length, body)
 
   size <- nchar(rjson::toJSON(body, method="C"))
 

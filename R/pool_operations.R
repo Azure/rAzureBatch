@@ -18,39 +18,45 @@ addPool <- function(poolId, vmSize, ...){
     autoscaleFormula <- args$autoscaleFormula
   }
 
+  startTask <- NULL
+  if(!is.null(args$startTask)){
+    startTask <- args$startTask
+  }
+
+  virtualMachineConfiguration <- NULL
+  if(!is.null(args$virtualMachineConfiguration)){
+    virtualMachineConfiguration <- args$virtualMachineConfiguration
+  }
+
   maxTasksPerNode <- ""
   if(!is.null(args$maxTasksPerNode)){
     maxTasksPerNode <- args$maxTasksPerNode
+  }
+
+  enableAutoScale <- FALSE
+  if(!is.null(args$enableAutoScale)){
+    enableAutoScale <- args$enableAutoScale
+  }
+
+  autoScaleEvaluationInterval <- "PT5M"
+  if(!is.null(args$autoScaleEvaluationInterval)){
+    autoScaleEvaluationInterval <- args$autoScaleEvaluationInterval
   }
 
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
   batchCredentials <- getBatchCredentials()
 
-  commands <- paste0(.linuxWrapCommands(commands))
-
   body = list(vmSize = vmSize,
               id = poolId,
-              startTask = list(
-                commandLine = commands,
-                userIdentity = list(
-                  autoUser = list(
-                    scope = "pool",
-                    elevationLevel = "admin"
-                  )
-                ),
-                waitForSuccess = TRUE
-              ),
-              virtualMachineConfiguration = list(
-                imageReference = list(publisher = "microsoft-ads",
-                                    offer = "linux-data-science-vm",
-                                    sku = "linuxdsvm",
-                                    version = "latest"),
-                nodeAgentSKUId ="batch.node.centos 7"),
-              enableAutoScale = TRUE,
+              startTask = startTask,
+              virtualMachineConfiguration = virtualMachineConfiguration,
+              enableAutoScale = enableAutoScale,
               autoScaleFormula = autoscaleFormula,
-              autoScaleEvaluationInterval = "PT5M",
+              autoScaleEvaluationInterval = autoScaleEvaluationInterval,
               maxTasksPerNode = maxTasksPerNode)
+
+  body <- Filter(length, body)
 
   size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
 
