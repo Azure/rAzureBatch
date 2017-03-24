@@ -61,7 +61,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
 
   headers['Authorization'] <- authString
 
-  requestHeaders <- add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.0.1")
+  requestHeaders <- add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.2.1")
 
   response <- ""
 
