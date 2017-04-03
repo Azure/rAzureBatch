@@ -36,7 +36,7 @@ addPool <- function(poolId, vmSize, ...){
                 commandLine = commands,
                 userIdentity = list(
                   autoUser = list(
-                    scope = "task",
+                    scope = "pool",
                     elevationLevel = "admin"
                   )
                 ),
