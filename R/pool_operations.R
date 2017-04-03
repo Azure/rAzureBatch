@@ -25,9 +25,8 @@ addPool <- function(poolId, vmSize, ...){
 
   batchCredentials <- getBatchCredentials()
 
-  commands <- c("sed -i -e 's/Defaults    requiretty.*/ #Defaults    requiretty/g' /etc/sudoers",
-                "export PATH=/anaconda/envs/py35/bin:$PATH",
-                "sudo env PATH=$PATH pip install --no-dependencies blobxfer")
+  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH",
+                "env PATH=$PATH pip install --no-dependencies blobxfer")
 
   commands <- paste0(.linuxWrapCommands(commands), ";", packages)
 
@@ -37,7 +36,7 @@ addPool <- function(poolId, vmSize, ...){
                 commandLine = commands,
                 userIdentity = list(
                   autoUser = list(
-                    scope = "task",
+                    scope = "pool",
                     elevationLevel = "admin"
                   )
                 ),
