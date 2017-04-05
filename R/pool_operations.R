@@ -6,9 +6,11 @@ addPool <- function(poolId, vmSize, ...){
     raw <- args$raw
   }
 
-  packages <- ""
+  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH",
+                "env PATH=$PATH pip install --no-dependencies blobxfer")
+
   if(!is.null(args$packages)){
-    packages <- args$packages
+    commands <- c(commands, args$packages)
   }
 
   autoscaleFormula <- ""
@@ -25,10 +27,7 @@ addPool <- function(poolId, vmSize, ...){
 
   batchCredentials <- getBatchCredentials()
 
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH",
-                "env PATH=$PATH pip install --no-dependencies blobxfer")
-
-  commands <- paste0(.linuxWrapCommands(commands), ";", packages)
+  commands <- paste0(.linuxWrapCommands(commands))
 
   body = list(vmSize = vmSize,
               id = poolId,
