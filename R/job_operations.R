@@ -12,46 +12,28 @@
 #' @examples
 #' addJob(job-001, packages = c("devtools", "httr"))
 #' @export
-addJob <- function(jobId, ...){
-  headers <- character()
+addJob <- function(jobId,
+                   poolInfo,
+                   jobPreparationTask = NULL,
+                   usesTaskDependencies = FALSE,
+                   raw = FALSE,
+                   ...){
+
   args <- list(...)
-  config <- args$config
-  resourceFiles <- args$resourceFiles
-
-  raw <- FALSE
-  if(!is.null(args$raw)){
-    raw <- args$raw
-  }
-
-  pool <- config$batchAccount$pool
-  stopifnot(!is.null(pool))
 
   batchCredentials <- getBatchCredentials()
   storageCredentials <- getStorageCredentials()
 
-  packages <- args$packages
-  commands <- c("ls")
+  body <- list(id=jobId,
+              poolInfo = poolInfo,
+              jobPreparationTask = jobPreparationTask,
+              usesTaskDependencies = usesTaskDependencies)
 
-  body = list(id=jobId,
-              poolInfo=list("poolId" = pool$name),
-              jobPreparationTask = list(
-                commandLine = .linuxWrapCommands(commands),
-                userIdentity = list(
-                  autoUser = list(
-                    scope = "task",
-                    elevationLevel = "admin"
-                  )
-                ),
-                waitForSuccess = TRUE,
-                resourceFiles = resourceFiles,
-                constraints = list(
-                  maxTaskRetryCount = 2
-                )
-              ),
-              usesTaskDependencies = TRUE)
+  body <- Filter(length, body)
 
   size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
 
+  headers <- character()
   headers['Content-Length'] <- size
   headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
 
