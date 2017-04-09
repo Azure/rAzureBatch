@@ -63,9 +63,7 @@ for(package in azbatchenv$packages){
 ls(azbatchenv)
 parent.env(azbatchenv$exportenv) <- getparentenv(azbatchenv$pkgName)
 
-azbatchenv$exportenv
-print(azbatchenv$expr)
-azbatchenv$packages
+azbatchenv$pkgName
 sessionInfo()
 if(!is.null(azbatchenv$inputs)){
   options("az_config" = list(container = azbatchenv$inputs))
@@ -85,5 +83,4 @@ result <- lapply(azbatchenv$argsList, function(args){
 file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]
 saveRDS(result, file = paste0(AZ_BATCH_TASK_WORKING_DIR, "/", file_result_name, "-result.rds"))
 
-print(result)
 quit(save = "yes", status = 0, runLast = FALSE)
