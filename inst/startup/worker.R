@@ -9,6 +9,46 @@ if (length(args)==0) {
   args[2] = "out.txt"
 }
 
+getparentenv <- function(pkgname) {
+  parenv <- NULL
+
+  # if anything goes wrong, print the error object and return
+  # the global environment
+  tryCatch({
+    # pkgname is NULL in many cases, as when the foreach loop
+    # is executed interactively or in an R script
+    if (is.character(pkgname)) {
+      # load the specified package
+      if (require(pkgname, character.only=TRUE)) {
+        # search for any function in the package
+        pkgenv <- as.environment(paste0('package:', pkgname))
+        for (sym in ls(pkgenv)) {
+          fun <- get(sym, pkgenv, inherits=FALSE)
+          if (is.function(fun)) {
+            env <- environment(fun)
+            if (is.environment(env)) {
+              parenv <- env
+              break
+            }
+          }
+        }
+        if (is.null(parenv)) {
+          stop('loaded ', pkgname, ', but parent search failed', call.=FALSE)
+        } else {
+          message('loaded ', pkgname, ' and set parent environment')
+        }
+      }
+    }
+  },
+  error=function(e) {
+    cat(sprintf('Error getting parent environment: %s\n',
+                conditionMessage(e)))
+  })
+
+  # return the global environment by default
+  if (is.null(parenv)) globalenv() else parenv
+}
+
 AZ_BATCH_TASK_WORKING_DIR <- args[1]
 AZ_BATCH_TASK_ENV <- args[2]
 
@@ -20,8 +60,13 @@ azbatchenv <- readRDS(wd)
 for(package in azbatchenv$packages){
   library(package, character.only = TRUE)
 }
-parent.env(azbatchenv$exportenv) <- globalenv()
+ls(azbatchenv)
+parent.env(azbatchenv$exportenv) <- getparentenv(azbatchenv$pkgName)
 
+azbatchenv$exportenv
+print(azbatchenv$expr)
+azbatchenv$packages
+sessionInfo()
 if(!is.null(azbatchenv$inputs)){
   options("az_config" = list(container = azbatchenv$inputs))
 }
@@ -40,4 +85,5 @@ result <- lapply(azbatchenv$argsList, function(args){
 file_result_name <- strsplit(AZ_BATCH_TASK_ENV, "[.]")[[1]][1]
 saveRDS(result, file = paste0(AZ_BATCH_TASK_WORKING_DIR, "/", file_result_name, "-result.rds"))
 
+print(result)
 quit(save = "yes", status = 0, runLast = FALSE)
