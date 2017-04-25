@@ -142,3 +142,16 @@ listPoolNodes <- function(poolId, ...){
 
   callBatchService(request, batchCredentials)
 }
+
+listJobs <- function(query = list()){
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs"),
+    query = append(list("api-version" = apiVersion), query)
+  )
+
+  callBatchService(request, batchCredentials)
+}
+
