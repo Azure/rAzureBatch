@@ -61,7 +61,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
 
   headers['Authorization'] <- authString
 
-  requestHeaders <- add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.2.3")
+  requestHeaders <- add_headers(.headers = headers, "User-Agent"=paste0("rAzureBatch/", packageVersion("rAzureBatch"), ";", "doAzureParallel/", packageVersion("doAzureParallel")))
 
   response <- ""
 
@@ -74,7 +74,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
                     getOption("verbose"))
 
   write <- if(writeFlag) { write_memory() } else { NULL }
-  verboseMode <- if(!is.null(config) && !is.null(config$settings) && config$settings$verbose){ verbose() } else { NULL }
+  verboseMode <- if(getOption("verbose")){ verbose() } else { NULL }
 
   if(verbose){
     print(stringToSign)
