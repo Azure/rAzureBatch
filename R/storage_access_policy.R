@@ -16,7 +16,7 @@ signed_services <- 'ss'
 signed_ip <- 'si'
 signed_version <- 'sv'
 
-constructSas <- function(permission, sr, path, account_key,
+constructSas <- function(permission, sr, path,
                          start = Sys.time() - 60*60*24*1,
                          end = Sys.time() + 60*60*24*2){
   myList <- list()
@@ -74,7 +74,7 @@ constructSas <- function(permission, sr, path, account_key,
     print(stringToSign)
   }
 
-  undecodedKey <- RCurl::base64Decode(account_key, mode="raw")
+  undecodedKey <- RCurl::base64Decode(storageCredentials$key, mode="raw")
   encString <- RCurl::base64(
     digest::hmac(key=undecodedKey,
                  object=enc2utf8(stringToSign),

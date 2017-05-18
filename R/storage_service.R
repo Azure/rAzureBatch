@@ -28,10 +28,12 @@ StorageCredentials <- setRefClass("StorageCredentials",
                                     }
                                   ))
 
-callStorageSas <- function(request, credentials, body=NULL, sas_params){
-  requestdate <- http_date(Sys.time())
+callStorageSas <- function(request, accountName, body = NULL, sas_params, ...){
+  args <- list(...)
 
-  url <- sprintf("https://%s.blob.core.windows.net%s", credentials, request$path)
+  requestdate <- httr::http_date(Sys.time())
+
+  url <- sprintf("https://%s.blob.core.windows.net%s", accountName, request$path)
 
   headers <- request$headers
   headers['x-ms-date'] <- requestdate
@@ -39,39 +41,49 @@ callStorageSas <- function(request, credentials, body=NULL, sas_params){
 
   request$query <- append(request$query, sas_params)
 
-  requestHeaders<-add_headers(.headers = headers)
+  requestHeaders <- httr::add_headers(.headers = headers)
 
   response <- ""
   config <- getOption("az_config")
-  if(!is.null(config) && !is.null(config$settings)){
-    verbose <- config$settings$verbose
-  }
-  else{
-    verbose <- getOption("verbose")
-  }
+
+  verbose <- ifelse(!is.null(config) && !is.null(config$settings),
+                    config$settings$verbose,
+                    getOption("verbose"))
+
+  verboseMode <- NULL
 
   if(verbose){
     print(headers)
     print(paste0("URL: ", url))
+    #cat(content(response, "text"), "\n")
 
-    response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body, verbose())
-    cat(content(response, "text"), "\n")
+    verboseMode <- verbose()
   }
-  else{
-    response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
+
+  write <- NULL
+  if(!is.null(args$write)){
+    write <- args$write
   }
+
+  response <- httr::VERB(request$method,
+                   url,
+                   verboseMode,
+                   write,
+                   query = request$query,
+                   config = requestHeaders,
+                   body = body)
 
   stop_for_status(response)
 }
 
-callStorage <- function(request, credentials, body=NULL, ...){
+callStorage <- function(request, credentials, body = NULL, ...){
   args <- list(...)
   contentType = args$contentType
 
   stringToSign <- createSignature(request$method, request$headers)
 
   url <- sprintf("https://%s.blob.core.windows.net%s", credentials$name, request$path)
-  requestdate <- http_date(Sys.time())
+  requestdate <- httr::http_date(Sys.time())
 
   headers <- request$headers
   headers['x-ms-date'] <- requestdate
@@ -115,7 +127,7 @@ callStorage <- function(request, credentials, body=NULL, ...){
     print(headers)
     print(paste0("URL: ", url))
 
-    response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body, verbose())
+    response <- httr::VERB(request$method, url, query = request$query, config = requestHeaders, body=body, verbose())
     cat(content(response, "text"), "\n")
   }
   else{
@@ -134,7 +146,7 @@ listBlobs <- function(containerName, sasToken = list()){
   storageCredentials <- getStorageCredentials()
 
   if(length(sasToken) == 0){
-    sasToken <- constructSas("rl", "c", containerName, storageCredentials$key)
+    sasToken <- constructSas("rl", "c", containerName)
   }
 
   query <- list('restype' = "container", 'comp' = "list")
@@ -198,21 +210,21 @@ createContainer <- function(containerName, ...){
   callStorage(request, storageCredentials, contentType = raw)
 }
 
-deleteBlob <- function(containerName, blobName, sasToken = list(), ...){
-  storageCredentials <- getStorageCredentials()
-
-  if(length(sasToken) == 0){
-    sasToken <- constructSas("2016-11-30", "d", "c", containerName, storageCredentials$key)
-  }
-
+deleteBlob <- function(containerName, blobName, sasToken = NULL, ...){
   request <- AzureRequest$new(
     method = "DELETE",
     path = paste0("/", containerName, "/", blobName))
 
-  callStorageSas(request, storageCredentials$name, sas_params = sasToken)
+  if(!is.null(sasToken)){
+    callStorageSas(request, args$accountName, sas_params = sasToken)
+  }
+  else {
+    storageCredentials <- getStorageCredentials()
+    callStorage(request, storageCredentials)
+  }
 }
 
-uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
+uploadBlob <- function(containerName, fileDirectory, sasToken = NULL, parallelThreads = 1, ...){
   args <- list(...)
 
   if(!is.null(args$accountName)){
@@ -223,11 +235,17 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
     name <- storageCredentials$name
   }
 
-  if(length(sasToken) == 0){
-    sasToken <- constructSas("rwcl", "c", containerName, storageCredentials$key)
+  if(file.exists(fileDirectory)){
+    fileSize <- file.size(fileDirectory)
+  }
+  else if(file.exists(paste0(getwd(), "/", fileDirectory))){
+    fileDirectory <- paste0(getwd(), "/", fileDirectory)
+    fileSize <- file.size(fileDirectory)
+  }
+  else{
+    stop("The given file does not exist.")
   }
 
-  fileSize <- file.size(fileDirectory)
 
   # file size is less than 64 mb
   if(fileSize < (1024 * 1024 * 64)){
@@ -248,14 +266,19 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = list(), ...){
       path = paste0("/", containerName, "/", blobName),
       headers = headers)
 
-    callStorageSas(request, name, body=upload_file(fileDirectory), sas_params = sasToken)
+    if(!is.null(sasToken)){
+      callStorageSas(request, name, body = endFile, sas_params = sasToken)
+    }
+    else {
+      callStorage(request, storageCredentials, body = endFile)
+    }
   }
   else{
-    uploadChunk(containerName, fileDirectory, sas_params = sasToken, ...)
+    uploadChunk(containerName, fileDirectory, sas_params = sasToken, body = endFile, parallelThreads = parallelThreads, ...)
   }
 }
 
-uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
+uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
   args <- list(...)
   storageCredentials <- getStorageCredentials()
 
@@ -318,13 +341,14 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
           path = paste0("/", containerName, "/", blobName),
           headers = headers,
           query=list('comp'="block",
-                     'blockid'=blockId))
+                     'blockid'=blockId),
+          body = data)
 
-        if(length(sasToken) == 0){
-          callStorage(request, storageCredentials, body = data, sas_params = sasToken)
+        if(is.null(sasToken)){
+          callStorage(request, storageCredentials)
         }
         else{
-          callStorageSas(request, storageCredentials, body = data, sas_params = sasToken)
+          callStorageSas(request, storageCredentials, sas_params = sasToken)
         }
 
         return(blockId)
@@ -336,6 +360,8 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = list(), ...){
 
       currentChunk <- currentChunk + count
     }
+
+    doParallel::stopImplicitCluster()
   }
   else{
 
@@ -364,10 +390,10 @@ putBlockList <- function(containerName, fileName, body){
     method = "PUT",
     path = paste0("/", containerName, "/", fileName),
     headers = headers,
-    query=list('comp'="blocklist")
+    query = list('comp'="blocklist")
   )
 
-  callStorage(request, storageCredentials, body = body)
+  callStorage(request, storageCredentials, body)
 }
 
 getBlockList <- function(containerName, fileName){
@@ -385,6 +411,7 @@ getBlockList <- function(containerName, fileName){
 
 uploadDirectory <- function(containerName, fileDirectory, ...){
   args <- list(...)
+
   if(is.null(args$storageCredentials)){
     storageCredentials <- getStorageCredentials()
   }
@@ -401,27 +428,32 @@ uploadDirectory <- function(containerName, fileDirectory, ...){
   }
 }
 
-downloadBlob <- function(containerName, fileName, sasToken = list()){
-  storageName <- ""
-  if(!is.null(getOption("az_config")) && !is.null(getOption("az_config")$container)){
-    storageName <- getOption("az_config")$container$name
-    sasToken <- getOption("az_config")$container$sasToken
-  }
-  else{
-    storageCredentials <- getStorageCredentials()
-    storageName <- storageCredentials$name
+downloadBlob <- function(containerName,
+                         blobName,
+                         sasToken = NULL,
+                         overwrite = FALSE,
+                         ...){
+  args <- list(...)
 
-    if(length(sasToken) == 0){
-      sasToken <- constructSas("rwcl", "c", containerName, storageCredentials$key)
-    }
+  if(!is.null(args$localDest)){
+    write <- httr::write_disk(args$localDest, overwrite)
+  }
+  else {
+    write <- httr::write_memory()
+  }
+
+  if(is.null(args$accountName)){
+    storageCredentials <- getStorageCredentials()
   }
 
   request <- AzureRequest$new(
     method = "GET",
-    path = paste0("/", containerName, "/", fileName))
+    path = paste0("/", containerName, "/", blobName))
 
-  r <- callStorageSas(request, storageName, sas_params = sasToken)
-  bin <- content(r, "raw")
-  writeBin(bin, "temp.rds")
-  readRDS("temp.rds")
+  if(!is.null(sasToken)){
+    callStorageSas(request, args$accountName, sas_params = sasToken, write = write)
+  }
+  else {
+    callStorage(request, storageCredentials, write = write)
+  }
 }

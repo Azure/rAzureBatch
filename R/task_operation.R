@@ -21,6 +21,7 @@ addTask <- function(jobId, taskId = "default", ...){
   resourceFiles <- args$resourceFiles
   commandLine <- args$commandLine
   dependsOn <- args$dependsOn
+  outputFiles <- args$outputFiles
 
   if(is.null(commandLine)){
     stop("Task requires a command line.")
@@ -30,13 +31,14 @@ addTask <- function(jobId, taskId = "default", ...){
               commandLine = commandLine,
               userIdentity = list(
                 autoUser = list(
-                  scope = "task",
+                  scope = "pool",
                   elevationLevel = "admin"
                 )
               ),
               resourceFiles = resourceFiles,
               environmentSettings = environmentSettings,
-              dependsOn = dependsOn)
+              dependsOn = dependsOn,
+              outputFiles = outputFiles)
 
   body <- Filter(length, body)
 
