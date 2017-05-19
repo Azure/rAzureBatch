@@ -146,7 +146,7 @@ listBlobs <- function(containerName, sasToken = list()){
   storageCredentials <- getStorageCredentials()
 
   if(length(sasToken) == 0){
-    sasToken <- constructSas("rl", "c", containerName)
+    sasToken <- createSasToken("rl", "c", containerName)
   }
 
   query <- list('restype' = "container", 'comp' = "list")
@@ -245,7 +245,6 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = NULL, parallelTh
   else{
     stop("The given file does not exist.")
   }
-
 
   # file size is less than 64 mb
   if(fileSize < (1024 * 1024 * 64)){

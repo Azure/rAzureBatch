@@ -16,7 +16,7 @@ signed_services <- 'ss'
 signed_ip <- 'si'
 signed_version <- 'sv'
 
-constructSas <- function(permission, sr, path,
+createSasToken <- function(permission, sr, path,
                          start = Sys.time() - 60*60*24*1,
                          end = Sys.time() + 60*60*24*2){
   myList <- list()
@@ -95,26 +95,32 @@ getValueFromQuery <- function(query, header){
   value
 }
 
-generateResourceFile <- function(storageAccount, containerName, fileName, sasToken){
-  file <- sprintf("https://%s.blob.core.windows.net/%s/%s", storageAccount, containerName, fileName)
-
-  query <- generateSasUrl(sasToken)
-  file <- paste0(file, query)
-
+createResourceFile <- function(url, fileName){
   resourceFile <-list(
-    blobSource = file,
+    blobSource = url,
     filePath = fileName
   )
 }
 
-generateSasUrl <- function(sasToken){
-  file <- "?"
-
-  for(query in names(sasToken)){
-    file <- paste0(file, query, "=", curlEscape(sasToken[[query]]), "&")
+createBlobUrl <- function(storageAccount, containerName, fileName = NULL, sasToken){
+  if(is.null(fileName)){
+    url <- sprintf("https://%s.blob.core.windows.net/%s", storageAccount, containerName)
+  }
+  else {
+    url <- sprintf("https://%s.blob.core.windows.net/%s/%s", storageAccount, containerName, fileName)
   }
 
-  file <- substr(file, 1, nchar(file) - 1)
+  queryParameterUrl <- "?"
+
+  for(query in names(sasToken)){
+    queryParameterUrl <- paste0(queryParameterUrl, query, "=", curlEscape(sasToken[[query]]), "&")
+  }
+
+  queryParameterUrl <- substr(queryParameterUrl, 1, nchar(queryParameterUrl) - 1)
+
+  url <- paste0(url, queryParameterUrl)
+
+  return(url)
 }
 
 
