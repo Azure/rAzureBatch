@@ -1,4 +1,4 @@
-apiVersion <- "2017-01-01.4.0"
+apiVersion <- "2017-05-01.5.0"
 
 getBatchCredentials <- function(configPath = "az_config.json", ...){
   config <- getOption("az_config")
@@ -32,7 +32,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   args <- list(...)
   contentType = args$contentType
 
-  requestdate <- http_date(Sys.time())
+  requestdate <- httr::http_date(Sys.time())
 
   headers <- request$headers
   headers['ocp-date'] <- requestdate
@@ -61,7 +61,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
 
   headers['Authorization'] <- authString
 
-  requestHeaders <- add_headers(.headers = headers, "User-Agent"=paste0("rAzureBatch/", packageVersion("rAzureBatch"), ";", "doAzureParallel/", packageVersion("doAzureParallel")))
+  requestHeaders <- httr::add_headers(.headers = headers, "User-Agent"=paste0("rAzureBatch/", packageVersion("rAzureBatch"), ";", "doAzureParallel/", packageVersion("doAzureParallel")))
 
   response <- ""
 
@@ -73,8 +73,8 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
                     config$settings$verbose,
                     getOption("verbose"))
 
-  write <- if(writeFlag) { write_memory() } else { NULL }
-  verboseMode <- if(getOption("verbose")){ verbose() } else { NULL }
+  write <- if(writeFlag) { httr::write_memory() } else { NULL }
+  verboseMode <- if(getOption("verbose")){ httr::verbose() } else { NULL }
 
   if(verbose){
     print(stringToSign)
@@ -83,7 +83,14 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
     print(requestHeaders)
   }
 
-  response <- VERB(request$method, url, config = requestHeaders, verboseMode, write, query = request$query, body=body, encode="json")
+  response <- httr::VERB(request$method,
+                   url,
+                   config = requestHeaders,
+                   verboseMode,
+                   write,
+                   query = request$query,
+                   body=body,
+                   encode="json")
 
   if(!is.null(contentType) && contentType){
     content(response, as = "text")
