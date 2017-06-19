@@ -97,8 +97,10 @@ callStorage <- function(request, credentials, body = NULL, ...){
   }
 
   canonicalizedResource <- paste0("/", credentials$name, request$path, "\n")
-  for(name in sort(names(request$query))){
-    canonicalizedResource <- paste0(canonicalizedResource, name,":", request$query[[name]], "\n")
+  if(!is.null(names(request$query))){
+    for(name in sort(names(request$query))){
+      canonicalizedResource <- paste0(canonicalizedResource, name,":", request$query[[name]], "\n")
+    }
   }
 
   canonicalizedResource <- substr(canonicalizedResource, 1, nchar(canonicalizedResource) - 1)
