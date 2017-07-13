@@ -321,8 +321,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
   if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
     require(doParallel)
     parallelThreads <- args$parallelThreads
-    cl <- makeCluster(parallelThreads, outfile = 'log.txt')
-    registerDoParallel(cl)
+    registerDoParallel(parallelThreads)
     `%fun%` <- `%dopar%`
   }
 
@@ -386,6 +385,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
     if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
       require(doParallel)
       doParallel::stopImplicitCluster()
+      registerDoSEQ()
     }
 
     for(j in 1:length(results)){
