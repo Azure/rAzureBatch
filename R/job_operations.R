@@ -3,6 +3,7 @@ addJob <- function(jobId,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
                    content = "parsed",
+                   metadata,
                    ...) {
   batchCredentials <- getBatchCredentials()
 
@@ -10,7 +11,8 @@ addJob <- function(jobId,
     id = jobId,
     poolInfo = poolInfo,
     jobPreparationTask = jobPreparationTask,
-    usesTaskDependencies = usesTaskDependencies
+    usesTaskDependencies = usesTaskDependencies,
+    metadata = metadata
   )
 
   body <- Filter(length, body)
