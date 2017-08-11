@@ -16,6 +16,7 @@ addJob <- function(jobId,
                    poolInfo,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
+                   metadata,
                    raw = FALSE,
                    ...){
 
@@ -27,7 +28,8 @@ addJob <- function(jobId,
   body <- list(id=jobId,
               poolInfo = poolInfo,
               jobPreparationTask = jobPreparationTask,
-              usesTaskDependencies = usesTaskDependencies)
+              usesTaskDependencies = usesTaskDependencies,
+              metadata = metadata)
 
   body <- Filter(length, body)
 
