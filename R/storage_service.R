@@ -144,7 +144,7 @@ callStorage <- function(request, credentials, body = NULL, ...){
   }
 }
 
-listBlobs <- function(containerName, sasToken = list(), ...){
+listBlobs <- function(containerName, sasToken = NULL, ...){
   args <- list(...)
 
   if(!is.null(args$accountName)){
