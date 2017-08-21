@@ -93,9 +93,9 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
                    encode = "json")
 
   if(!is.null(contentType) && contentType){
-    content(response, as = "text")
+    httr::content(response, as = "text")
   }
   else{
-    content(response)
+    httr::content(response)
   }
 }
