@@ -65,11 +65,11 @@ listTask <- function(jobId, ...){
   batchCredentials <- getBatchCredentials()
 
   args <- list(...)
-  skiptoken <- args$skiptoken
+  skipToken <- args$skipToken
 
-  if (!is.null(skiptoken)) {
+  if (!is.null(skipToken)) {
     query <- list("api-version" = apiVersion,
-                  "$skiptoken" = skiptoken)
+                  "$skiptoken" = skipToken)
   }
   else {
     query <- list("api-version" = apiVersion)
