@@ -47,7 +47,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   canonicalizedHeaders <- substr(canonicalizedHeaders, 1, nchar(canonicalizedHeaders) - 1)
 
   canonicalizedResource <- paste0("/", credentials$name, request$path, "\n")
-  for(name in sort(names(request$query))){
+  for (name in sort(names(request$query))) {
     canonicalizedResource <- paste0(canonicalizedResource, name,":", request$query[[name]], "\n")
   }
 
@@ -76,7 +76,7 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
   write <- if(writeFlag) { httr::write_memory() } else { NULL }
   verboseMode <- if(getOption("verbose")){ httr::verbose() } else { NULL }
 
-  if(verbose){
+  if (verbose) {
     print(stringToSign)
     print(url)
     print(paste0("Auth String: ", authString))
@@ -89,13 +89,13 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
                    verboseMode,
                    write,
                    query = request$query,
-                   body=body,
-                   encode="json")
+                   body = body,
+                   encode = "json")
 
   if(!is.null(contentType) && contentType){
-    content(response, as = "text")
+    httr::content(response, as = "text")
   }
   else{
-    content(response)
+    httr::content(response)
   }
 }

@@ -38,7 +38,10 @@ addTask <- function(jobId, taskId = "default", ...){
               resourceFiles = resourceFiles,
               environmentSettings = environmentSettings,
               dependsOn = dependsOn,
-              outputFiles = outputFiles)
+              outputFiles = outputFiles,
+              constraints = list(
+                maxTaskRetryCount = 3
+              ))
 
   body <- Filter(length, body)
 
@@ -61,49 +64,22 @@ addTask <- function(jobId, taskId = "default", ...){
 listTask <- function(jobId, ...){
   batchCredentials <- getBatchCredentials()
 
+  args <- list(...)
+  skipToken <- args$skipToken
+
+  if (!is.null(skipToken)) {
+    query <- list("api-version" = apiVersion,
+                  "$skiptoken" = skipToken)
+  }
+  else {
+    query <- list("api-version" = apiVersion)
+  }
+
   request <- AzureRequest$new(
     method = "GET",
     path = paste0("/jobs/", jobId, "/tasks"),
-    query = list("api-version" = apiVersion)
+    query = query
   )
 
   callBatchService(request, batchCredentials)
-}
-
-waitForTasksToComplete <- function(jobId, timeout, ...){
-  print("Waiting for tasks to complete. . .")
-
-  args <- list(...)
-  progress <- args$progress
-
-  if(is.null(args$tasks)){
-    stop("The number of tasks was not initialized.")
-  }
-
-  numOfTasks <- args$tasks
-  pb <- txtProgressBar(min = 0, max = numOfTasks, style = 3)
-
-  timeToTimeout <- Sys.time() + timeout
-
-  while(Sys.time() < timeToTimeout){
-    tasks <- listTask(jobId)
-
-    taskStates <- lapply(tasks$value, function(x) x$state != "completed")
-    count <- 0
-    for(i in 1:length(taskStates)){
-      if(taskStates[[i]] == FALSE){
-        count <- count + 1
-      }
-    }
-
-    setTxtProgressBar(pb, count)
-
-    if(all(taskStates == FALSE)){
-      return(0);
-    }
-
-    Sys.sleep(10)
-  }
-
-  stop("A timeout has occurred when waiting for tasks to complete.")
 }

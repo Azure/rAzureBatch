@@ -130,17 +130,17 @@ callStorage <- function(request, credentials, body = NULL, ...){
     print(paste0("URL: ", url))
 
     response <- httr::VERB(request$method, url, query = request$query, config = requestHeaders, body=body, verbose())
-    cat(content(response, "text"), "\n")
+    cat(httr::content(response, "text"), "\n")
   }
   else{
     response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
   }
 
   if(!is.null(contentType) && contentType){
-    content(response, as = "text")
+    httr::content(response, as = "text")
   }
   else{
-    content(response)
+    httr::content(response)
   }
 }
 
@@ -321,8 +321,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
   if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
     require(doParallel)
     parallelThreads <- args$parallelThreads
-    cl <- makeCluster(parallelThreads, outfile = 'log.txt')
-    registerDoParallel(cl)
+    registerDoParallel(parallelThreads)
     `%fun%` <- `%dopar%`
   }
 
@@ -386,6 +385,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
     if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
       require(doParallel)
       doParallel::stopImplicitCluster()
+      registerDoSEQ()
     }
 
     for(j in 1:length(results)){
