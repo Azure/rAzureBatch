@@ -9,33 +9,34 @@
 #'  \item{"envir"}: {The R environment that the task will run under.}
 #'}
 #' @return The request to the Batch service was successful.
-#' @examples
-#' addJob(job-001, packages = c("devtools", "httr"))
 #' @export
 addJob <- function(jobId,
                    poolInfo,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
                    raw = FALSE,
-                   ...){
-
+                   ...) {
   args <- list(...)
 
   batchCredentials <- getBatchCredentials()
   storageCredentials <- getStorageCredentials()
 
-  body <- list(id=jobId,
-              poolInfo = poolInfo,
-              jobPreparationTask = jobPreparationTask,
-              usesTaskDependencies = usesTaskDependencies)
+  body <- list(
+    id = jobId,
+    poolInfo = poolInfo,
+    jobPreparationTask = jobPreparationTask,
+    usesTaskDependencies = usesTaskDependencies
+  )
 
   body <- Filter(length, body)
 
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers <- character()
   headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
 
   request <- AzureRequest$new(
     method = "POST",
@@ -94,18 +95,21 @@ deleteJob <- function(jobId){
 #' Updates the properties of the specified job.
 #'
 #' @param jobId The id of the job.
+#' @param ... Additional parameters to customize update the job
 #' @return The request to the Batch service was successful.
 #' @export
-updateJob <- function(jobId, ...){
+updateJob <- function(jobId, ...) {
   batchCredentials <- getBatchCredentials()
 
   headers <- character()
 
   body = list(onAllTasksComplete = "terminatejob")
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
   request <- AzureRequest$new(
     method = "PATCH",
     path = paste0("/jobs/", jobId),
