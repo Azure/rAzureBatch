@@ -16,7 +16,8 @@ Imports:
     httr (>= 1.2.1),
     rjson (>= 0.2.15),
     RCurl (>= 1.95-4.8),
-    digest (>=  0.6.9)
+    digest (>=  0.6.9),
+    jsonlite
 Suggests:
     testthat
 RoxygenNote: 5.0.1
