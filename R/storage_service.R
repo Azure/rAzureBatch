@@ -112,7 +112,7 @@ callStorage <- function(request, credentials, body = NULL, ...){
   authString<-paste0("SharedKey ", credentials$name, ":", credentials$signString(stringToSign))
 
   headers['Authorization'] <- authString
-  requestHeaders<-add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.2.0")
+  requestHeaders <- httr::add_headers(.headers = headers, "User-Agent"="rAzureBatch/0.2.0")
 
   config <- getOption("az_config")
   if(!is.null(config) && !is.null(config$settings)){
