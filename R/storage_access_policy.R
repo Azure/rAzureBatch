@@ -113,7 +113,7 @@ createBlobUrl <- function(storageAccount, containerName, fileName = NULL, sasTok
   queryParameterUrl <- "?"
 
   for(query in names(sasToken)){
-    queryParameterUrl <- paste0(queryParameterUrl, query, "=", curlEscape(sasToken[[query]]), "&")
+    queryParameterUrl <- paste0(queryParameterUrl, query, "=", RCurl::curlEscape(sasToken[[query]]), "&")
   }
 
   queryParameterUrl <- substr(queryParameterUrl, 1, nchar(queryParameterUrl) - 1)
