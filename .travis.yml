@@ -6,7 +6,6 @@ cache: packages
 warnings_are_errors: false
 
 r_github_packages:
-  - Azure/rAzureBatch
   - jimhester/lintr
 
 after_success:
