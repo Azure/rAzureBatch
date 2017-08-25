@@ -20,7 +20,7 @@ StorageCredentials <- setRefClass("StorageCredentials",
                                   methods = list(
                                     signString = function(x){
                                       undecodedKey <- RCurl::base64Decode(key, mode="raw")
-                                      newString<-RCurl::base64(
+                                      RCurl::base64(
                                         digest::hmac(key=undecodedKey,
                                                      object=enc2utf8(x),
                                                      algo= "sha256", raw=TRUE)
@@ -73,7 +73,7 @@ callStorageSas <- function(request, accountName, body = NULL, sas_params, ...){
                    config = requestHeaders,
                    body = body)
 
-  stop_for_status(response)
+  httr::stop_for_status(response)
 }
 
 callStorage <- function(request, credentials, body = NULL, ...){
@@ -133,7 +133,7 @@ callStorage <- function(request, credentials, body = NULL, ...){
     cat(httr::content(response, "text"), "\n")
   }
   else{
-    response <- VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
+    response <- httr::VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
   }
 
   if(!is.null(contentType) && contentType){
@@ -254,7 +254,7 @@ uploadBlob <- function(containerName, fileDirectory, sasToken = NULL, parallelTh
 
   # file size is less than 64 mb
   if(fileSize < (1024 * 1024 * 64)){
-    endFile <- upload_file(fileDirectory)
+    endFile <- httr::upload_file(fileDirectory)
 
     headers <- c()
     headers['Content-Length'] <- fileSize
@@ -316,13 +316,13 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
 
   pb <- txtProgressBar(min = 0, max = numOfChunks, style = 3)
 
-  `%fun%` <- `%do%`
+  `%fun%` <- foreach::`%do%`
   parallelThreads <- 1
   if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
     require(doParallel)
     parallelThreads <- args$parallelThreads
     registerDoParallel(parallelThreads)
-    `%fun%` <- `%dopar%`
+    `%fun%` <- foreach::`%dopar%`
   }
 
   # Initialize the current indices for chunks and blockList
@@ -341,7 +341,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
     chunk <- readBin(to.read, raw(), n = defaultSize * count)
     accountName <- name
 
-    results <- foreach(i = 0:(count - 1), .export = c("sasToken", "accountName")) %fun% {
+    results <- foreach::foreach(i = 0:(count - 1), .export = c("sasToken", "accountName")) %fun% {
       if(i == count - 1){
         data <- chunk[((i*defaultSize) + 1) :  length(chunk)]
       }
@@ -385,7 +385,7 @@ uploadChunk <- function(containerName, fileDirectory, sasToken = NULL, ...){
     if(!is.null(args$parallelThreads) && args$parallelThreads > 1){
       require(doParallel)
       doParallel::stopImplicitCluster()
-      registerDoSEQ()
+      foreach::registerDoSEQ()
     }
 
     for(j in 1:length(results)){
