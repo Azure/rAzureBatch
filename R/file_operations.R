@@ -1,8 +1,13 @@
-getNodeFile <- function(poolId, nodeId, filePath) {
+getNodeFile <- function(poolId, nodeId, filePath, ...) {
   batchCredentials <- getBatchCredentials()
 
+  verb <- "GET"
+  if (!is.null(args$verb) == "HEAD") {
+    verb <- args$verb
+  }
+
   request <- AzureRequest$new(
-    method = "GET",
+    method = verb,
     path = paste0("/pools/", poolId, "/nodes/", nodeId, "/files/", filePath),
     query = list("api-version" = apiVersion)
   )
@@ -10,11 +15,17 @@ getNodeFile <- function(poolId, nodeId, filePath) {
   callBatchService(request, batchCredentials)
 }
 
-getTaskFile <- function(jobId, taskId, filePath) {
+getTaskFile <- function(jobId, taskId, filePath, ...) {
   batchCredentials <- getBatchCredentials()
+  args <- list(...)
+
+  verb <- "GET"
+  if (!is.null(args$verb) && args$verb == "HEAD") {
+    verb <- args$verb
+  }
 
   request <- AzureRequest$new(
-    method = "GET",
+    method = verb,
     path = paste0("/jobs/", jobId, "/tasks/", taskId, "/files/", filePath),
     query = list("api-version" = apiVersion)
   )
