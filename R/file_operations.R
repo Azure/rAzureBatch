@@ -1,5 +1,6 @@
 getNodeFile <- function(poolId, nodeId, filePath, ...) {
   batchCredentials <- getBatchCredentials()
+  args <- list(...)
 
   verb <- "GET"
   if (!is.null(args$verb) == "HEAD") {
