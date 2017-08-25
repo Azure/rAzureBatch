@@ -117,3 +117,23 @@ updateJob <- function(jobId, ...){
 
   callBatchService(request, batchCredentials, body)
 }
+
+#' Gets job task counts by job state.
+#'
+#' @param jobId The id of the job.
+#'
+#' @return A response containing the task counts of different states.
+#' @examples
+#' getJobTaskCounts(job-001)
+#' @export
+getJobTaskCounts <- function(jobId){
+  batchCredentials <- getBatchCredentials()
+  
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs/", jobId, "/taskcounts"),
+    query = list("api-version" = apiVersion)
+  )
+  
+  callBatchService(request, batchCredentials)
+}

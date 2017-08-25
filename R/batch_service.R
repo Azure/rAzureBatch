@@ -1,4 +1,4 @@
-apiVersion <- "2017-05-01.5.0"
+apiVersion <- "2017-06-01.5.1"
 
 getBatchCredentials <- function(configPath = "az_config.json", ...){
   config <- getOption("az_config")
