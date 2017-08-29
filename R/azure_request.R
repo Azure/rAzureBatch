@@ -1,41 +1,146 @@
-createSignature <- function(requestMethod, headerList=character()) {
-  headers <- c('Content-Encoding',
-               'Content-Language',
-               'Content-Length',
-               'Content-MD5',
-               'Content-Type',
-               'Date',
-               'If-Modified-Since',
-               'If-Match',
-               'If-None-Match',
-               'If-Unmodified-Since',
-               'Range' )
+createSignature <-
+  function(requestMethod, headerList = character()) {
+    headers <- c(
+      'Content-Encoding',
+      'Content-Language',
+      'Content-Length',
+      'Content-MD5',
+      'Content-Type',
+      'Date',
+      'If-Modified-Since',
+      'If-Match',
+      'If-None-Match',
+      'If-Unmodified-Since',
+      'Range'
+    )
 
-  stringToSign <- paste0(requestMethod, "\n")
+    stringToSign <- paste0(requestMethod, "\n")
 
-  for(name in headers){
-    temp <- ifelse(!is.na(headerList[name]), headerList[name], "")
+    for (name in headers) {
+      temp <- ifelse(!is.na(headerList[name]), headerList[name], "")
 
-    stringToSign <- paste0(stringToSign, temp, "\n")
+      stringToSign <- paste0(stringToSign, temp, "\n")
+    }
+
+    return(stringToSign)
   }
 
-  return(stringToSign)
+AzureRequest <- setRefClass(
+  "AzureRequest",
+  fields = list(
+    method = "character",
+    path = "character",
+    headers = "character",
+    query = "list",
+    body = "list",
+    url = "character"
+  ),
+
+  methods = list(
+    signString = function(x, key) {
+      undecodedKey <- RCurl::base64Decode(key, mode = "raw")
+      RCurl::base64(digest::hmac(
+        key = undecodedKey,
+        object = enc2utf8(x),
+        algo = "sha256",
+        raw = TRUE
+      ))
+    }
+  )
+)
+
+signAzureRequest <- function(request, resource, key, prefix) {
+  headers <- request$headers
+  canonicalizedHeaders <- ""
+
+  for (name in sort(names(headers))) {
+    if (grepl(prefix, name)) {
+      canonicalizedHeaders <-
+        paste0(canonicalizedHeaders, name, ":", headers[name], "\n")
+    }
+  }
+
+  canonicalizedResource <- paste0("/", resource, request$path, "\n")
+  if (!is.null(names(request$query))) {
+    for (name in sort(names(request$query))) {
+      canonicalizedResource <-
+        paste0(canonicalizedResource, name, ":", request$query[[name]], "\n")
+    }
+  }
+
+  canonicalizedResource <-
+    substr(canonicalizedResource, 1, nchar(canonicalizedResource) - 1)
+
+  stringToSign <- createSignature(request$method, request$headers)
+  stringToSign <- paste0(stringToSign, canonicalizedHeaders)
+  stringToSign <- paste0(stringToSign, canonicalizedResource)
+
+  # sign the request
+  authorizationString <-
+    paste0("SharedKey ",
+           resource,
+           ":",
+           request$signString(stringToSign, key))
+
+  return(authorizationString)
 }
 
-AzureRequest <- setRefClass("AzureRequest",
-                            fields = list(
-                              method = "character",
-                              path = "character",
-                              headers = "character",
-                              query = "list"),
+executeAzureRequest <- function(request, ...) {
+  body <- NULL
+  httpTraffic <- NULL
+  write <- NULL
 
-                            methods = list(
-                              signString = function(x, key){
-                                undecodedKey <- RCurl::base64Decode(key, mode="raw")
-                                newString<-RCurl::base64(
-                                  digest::hmac(key=undecodedKey,
-                                               object=enc2utf8(x),
-                                               algo= "sha256", raw=TRUE)
-                                )
-                              }
-                            ))
+  if (length(request$body) != 0) {
+    body <- request$body
+  }
+
+  requestHeaders <- httr::add_headers(request$headers)
+
+  # Execute request with http method
+  if (request$method == "GET" ||
+      request$method == "POST" || request$method == "DELETE") {
+    httr::VERB(
+      request$method,
+      request$url,
+      config = requestHeaders,
+      body = body,
+      query = request$query,
+      encode = "json",
+      write,
+      httpTraffic
+    )
+  }
+  else if (request$method == "HEAD") {
+    httr::HEAD(
+      request$url,
+      config = requestHeaders,
+      body = body,
+      query = request$query,
+      encode = "json",
+      write,
+      httpTraffic
+    )
+  }
+  else {
+    stop(
+      sprintf(
+        "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, or DELETE",
+        request$method
+      )
+    )
+  }
+}
+
+extractAzureResponse <- function(response, content) {
+  if (content %in% c("raw", "text", "parsed")) {
+    httr::content(response, content)
+  }
+  else if (content == "response") {
+    response
+  }
+  # Legacy code: By default it will, automatically attempt
+  # figure out which one is most appropriate
+  else {
+    httr::content(response)
+  }
+}

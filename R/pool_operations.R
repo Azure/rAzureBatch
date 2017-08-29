@@ -1,45 +1,40 @@
-addPool <- function(poolId, vmSize, ...){
+addPool <- function(poolId, vmSize, content = "parsed", ...){
   args <- list(...)
-
-  raw <- FALSE
-  if(!is.null(args$raw)){
-    raw <- args$raw
-  }
 
   commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH",
                 "env PATH=$PATH pip install --no-dependencies blobxfer")
 
-  if(!is.null(args$packages)){
+  if (!is.null(args$packages)) {
     commands <- c(commands, args$packages)
   }
 
   autoscaleFormula <- ""
-  if(!is.null(args$autoscaleFormula)){
+  if (!is.null(args$autoscaleFormula)) {
     autoscaleFormula <- args$autoscaleFormula
   }
 
   startTask <- NULL
-  if(!is.null(args$startTask)){
+  if (!is.null(args$startTask)) {
     startTask <- args$startTask
   }
 
   virtualMachineConfiguration <- NULL
-  if(!is.null(args$virtualMachineConfiguration)){
+  if (!is.null(args$virtualMachineConfiguration)) {
     virtualMachineConfiguration <- args$virtualMachineConfiguration
   }
 
   maxTasksPerNode <- ""
-  if(!is.null(args$maxTasksPerNode)){
+  if (!is.null(args$maxTasksPerNode)) {
     maxTasksPerNode <- args$maxTasksPerNode
   }
 
   enableAutoScale <- FALSE
-  if(!is.null(args$enableAutoScale)){
+  if (!is.null(args$enableAutoScale)) {
     enableAutoScale <- args$enableAutoScale
   }
 
   autoScaleEvaluationInterval <- "PT5M"
-  if(!is.null(args$autoScaleEvaluationInterval)){
+  if (!is.null(args$autoScaleEvaluationInterval)) {
     autoScaleEvaluationInterval <- args$autoScaleEvaluationInterval
   }
 
@@ -68,13 +63,14 @@ addPool <- function(poolId, vmSize, ...){
     method = "POST",
     path = "/pools",
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body, contentType = raw)
+  callBatchService(request, batchCredentials, content)
 }
 
-deletePool <- function(poolId = ""){
+deletePool <- function(poolId, content = "parsed"){
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
@@ -87,21 +83,21 @@ deletePool <- function(poolId = ""){
     headers = headers
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
-getPool <- function(poolId){
-  batchCredentials = getBatchCredentials()
+getPool <- function(poolId, content = "parsed"){
+  batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
     method = "GET",
     path = paste0("/pools/", poolId),
     query = list("api-version" = apiVersion))
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
-resizePool <- function(poolId, ...){
+resizePool <- function(poolId, content = "parsed", ...){
   batchCredentials = getBatchCredentials()
   args = list(...)
 
@@ -126,12 +122,13 @@ resizePool <- function(poolId, ...){
     method = "POST",
     path = paste0("/pools/", poolId, "/evaluateautoscale"),
     query = list("api-version" = apiVersion),
-    headers = headers)
+    headers = headers,
+    body = body)
 
-  callBatchService(request, batchCredentials, body)
+  callBatchService(request, batchCredentials, content)
 }
 
-listPoolNodes <- function(poolId, ...){
+listPoolNodes <- function(poolId, content = "parsed", ...){
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -140,10 +137,10 @@ listPoolNodes <- function(poolId, ...){
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
-listJobs <- function(query = list()){
+listJobs <- function(query = list(), content = "parsed"){
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -152,6 +149,6 @@ listJobs <- function(query = list()){
     query = append(list("api-version" = apiVersion), query)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 

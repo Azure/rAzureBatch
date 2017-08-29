@@ -14,12 +14,11 @@ addJob <- function(jobId,
                    poolInfo,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
-                   raw = FALSE,
+                   content = "parsed",
                    ...) {
   args <- list(...)
 
   batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
 
   body <- list(
     id = jobId,
@@ -42,10 +41,11 @@ addJob <- function(jobId,
     method = "POST",
     path = "/jobs",
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body, contentType = raw)
+  callBatchService(request, batchCredentials, content)
 }
 
 #' Gets information about the specified job.
@@ -56,7 +56,7 @@ addJob <- function(jobId,
 #' @examples
 #' getJob(job-001)
 #' @export
-getJob <- function(jobId){
+getJob <- function(jobId, content = "parsed"){
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -65,7 +65,7 @@ getJob <- function(jobId){
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
 #' Deletes a job.
@@ -76,7 +76,7 @@ getJob <- function(jobId){
 #' @examples
 #' deleteJob(job-001)
 #' @export
-deleteJob <- function(jobId){
+deleteJob <- function(jobId, content = "parsed"){
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
@@ -89,7 +89,7 @@ deleteJob <- function(jobId){
     headers = headers
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
 #' Updates the properties of the specified job.
@@ -98,7 +98,7 @@ deleteJob <- function(jobId){
 #' @param ... Additional parameters to customize update the job
 #' @return The request to the Batch service was successful.
 #' @export
-updateJob <- function(jobId, ...) {
+updateJob <- function(jobId, content = "parsed", ...) {
   batchCredentials <- getBatchCredentials()
 
   headers <- character()
@@ -110,12 +110,14 @@ updateJob <- function(jobId, ...) {
   headers['Content-Length'] <- size
   headers['Content-Type'] <-
     'application/json;odata=minimalmetadata'
+
   request <- AzureRequest$new(
     method = "PATCH",
     path = paste0("/jobs/", jobId),
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body)
+  callBatchService(request, batchCredentials, content)
 }
