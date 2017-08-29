@@ -44,7 +44,7 @@ addPool <- function(poolId, vmSize, content = "parsed", ...) {
 
   batchCredentials <- getBatchCredentials()
 
-  body = list(
+  body <- list(
     vmSize = vmSize,
     id = poolId,
     startTask = startTask,
@@ -105,8 +105,8 @@ getPool <- function(poolId, content = "parsed") {
 }
 
 resizePool <- function(poolId, content = "parsed", ...) {
-  batchCredentials = getBatchCredentials()
-  args = list(...)
+  batchCredentials <- getBatchCredentials()
+  args <- list(...)
 
   autoscaleFormula <- ""
   if (!is.null(args$autoscaleFormula)) {

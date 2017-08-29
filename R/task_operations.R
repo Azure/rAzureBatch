@@ -8,11 +8,11 @@ addTask <- function(jobId, taskId = "default", content = "parsed", ...){
   dependsOn <- args$dependsOn
   outputFiles <- args$outputFiles
 
-  if(is.null(commandLine)){
+  if (is.null(commandLine)) {
     stop("Task requires a command line.")
   }
 
-  body = list(id = taskId,
+  body <- list(id = taskId,
               commandLine = commandLine,
               userIdentity = list(
                 autoUser = list(
@@ -30,7 +30,7 @@ addTask <- function(jobId, taskId = "default", content = "parsed", ...){
 
   body <- Filter(length, body)
 
-  size <- nchar(rjson::toJSON(body, method="C"))
+  size <- nchar(rjson::toJSON(body, method = "C"))
 
   headers <- c()
   headers['Content-Length'] <- size

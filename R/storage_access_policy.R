@@ -22,7 +22,7 @@ createSasToken <- function(permission,
                            start = Sys.time() - 60 * 60 * 24 * 1,
                            end = Sys.time() + 60 * 60 * 24 * 2) {
   myList <- list()
-  query = c()
+  query <- c()
 
   startTime <- as.POSIXlt(start, "UTC", "%Y-%m-%dT%H:%M:%S")
   startTime <- paste0(strftime(startTime, "%Y-%m-%dT%H:%I:%SZ"))

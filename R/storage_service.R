@@ -133,17 +133,17 @@ listBlobs <- function(containerName, ...) {
   callStorage(request, ...)
 }
 
-listContainers <- function(content = "parsed") {
+listContainers <- function(content = "parsed", ...) {
   query <- list('comp' = "list")
 
   request <- AzureRequest$new(method = "GET",
                               path = paste0("/"),
                               query = query)
 
-  callStorage(request, content)
+  callStorage(request, content, ...)
 }
 
-deleteContainer <- function(containerName, content = "parsed") {
+deleteContainer <- function(containerName, content = "parsed", ...) {
   query <- list('restype' = "container")
 
   request <- AzureRequest$new(
@@ -183,14 +183,6 @@ uploadBlob <-
            parallelThreads = 1,
            ...) {
     args <- list(...)
-
-    if (!is.null(args$accountName)) {
-      name <- args$accountName
-    }
-    else{
-      storageCredentials <- getStorageCredentials()
-      name <- storageCredentials$name
-    }
 
     if (file.exists(fileDirectory)) {
       fileSize <- file.size(fileDirectory)
@@ -246,7 +238,7 @@ uploadChunk <-
     }
 
     finfo <- file.info(fileDirectory)
-    to.read <- file(fileDirectory, "rb")
+    readBytes <- file(fileDirectory, "rb")
 
     defaultSize <- 50000000
     numOfChunks <- ceiling(finfo$size / defaultSize)
@@ -269,7 +261,7 @@ uploadChunk <-
         args$parallelThreads > 1) {
       require(doParallel)
       parallelThreads <- args$parallelThreads
-      registerDoParallel(parallelThreads)
+      doParallel::registerDoParallel(parallelThreads)
       `%fun%` <- foreach::`%dopar%`
     }
 
@@ -286,18 +278,19 @@ uploadChunk <-
         count <- parallelThreads
       }
 
-      chunk <- readBin(to.read, raw(), n = defaultSize * count)
-      accountName <- name
+      chunk <- readBin(readBytes, raw(), n = defaultSize * count)
 
       results <-
         foreach::foreach(i = 0:(count - 1),
                          .export = c("sasToken", "accountName")) %fun% {
+                           blockSize <- i * defaultSize
+
                            if (i == count - 1) {
-                             data <- chunk[((i * defaultSize) + 1):length(chunk)]
+                             data <- chunk[(blockSize + 1):length(chunk)]
                            }
-                           else{
+                           else {
                              data <-
-                               chunk[((i * defaultSize) + 1):((i * defaultSize) + defaultSize)]
+                               chunk[(blockSize + 1):(blockSize + defaultSize)]
                            }
 
                            blockId <- currentChunk + i
@@ -345,7 +338,7 @@ uploadChunk <-
       setTxtProgressBar(pb, currentChunk)
     }
 
-    close(to.read)
+    close(readBytes)
     httpBodyRequest <-
       paste0("<BlockList>", blockList, "</BlockList>")
     httpBodyRequest <-
@@ -400,8 +393,9 @@ getBlockList <-
   }
 
 uploadDirectory <- function(containerName, fileDirectory, ...) {
-  files = list.files(fileDirectory, full.names = TRUE, recursive = TRUE)
-  fileName = list.files(fileDirectory, recursive = TRUE)
+  files <-
+    list.files(fileDirectory, full.names = TRUE, recursive = TRUE)
+  fileName <- list.files(fileDirectory, recursive = TRUE)
 
   for (i in 1:length(files))
   {

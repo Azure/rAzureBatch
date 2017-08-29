@@ -1,7 +1,6 @@
 if (requireNamespace("lintr", quietly = TRUE)) {
   context("lints")
   test_that("Package Style", {
-
     linters <- list(
       absolute_path_linter = lintr::absolute_path_linter,
       assignment_linter = lintr::assignment_linter,
@@ -12,10 +11,8 @@ if (requireNamespace("lintr", quietly = TRUE)) {
       line_length_linter = lintr::line_length_linter(120),
       no_tab_linter = lintr::no_tab_linter,
       object_usage_linter = lintr::object_usage_linter,
-      object_name_linter = lintr::object_name_linter(style = "lowerCamelCase"),
       object_length_linter = lintr::object_length_linter,
       open_curly_linter = lintr::open_curly_linter,
-      single_quotes_linter = lintr::single_quotes_linter,
       spaces_inside_linter = lintr::spaces_inside_linter,
       spaces_left_parentheses_linter = lintr::spaces_left_parentheses_linter,
       trailing_blank_lines_linter = lintr::trailing_blank_lines_linter,

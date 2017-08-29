@@ -73,7 +73,7 @@ updateJob <- function(jobId, content = "parsed", ...) {
 
   headers <- character()
 
-  body = list(onAllTasksComplete = "terminatejob")
+  body <- list(onAllTasksComplete = "terminatejob")
   size <-
     nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
