@@ -13,7 +13,7 @@ getNodeFile <- function(poolId, nodeId, filePath, ...) {
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, raw = TRUE, contentType = TRUE)
 }
 
 getTaskFile <- function(jobId, taskId, filePath, ...) {
@@ -31,5 +31,5 @@ getTaskFile <- function(jobId, taskId, filePath, ...) {
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, raw = TRUE)
 }
