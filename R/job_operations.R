@@ -103,3 +103,15 @@ listJobs <- function(query = list(), content = "parsed") {
 
   callBatchService(request, batchCredentials, content)
 }
+
+getJobPreparationStatus <- function(jobId, content = "parsed") {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs/", jobId, "jobpreparationandreleasetaskstatus"),
+    query = list("api-version" = apiVersion)
+  )
+
+  callBatchService(request, batchCredentials, content)
+}

@@ -108,7 +108,8 @@ callStorage <- function(request, content, ...) {
   args <- list(...)
 
   if (!is.null(args$sasToken) && !is.null(args$accountName))  {
-    response <- callStorageSas(request, args$sasToken, args$accountName, ...)
+    response <-
+      callStorageSas(request, args$sasToken, args$accountName, ...)
   }
   else {
     credentials <- getStorageCredentials()
@@ -154,17 +155,18 @@ deleteContainer <- function(containerName, content = "parsed") {
   callStorage(request, ...)
 }
 
-createContainer <- function(containerName, content = "parsed", ...) {
-  query <- list('restype' = "container")
+createContainer <-
+  function(containerName, content = "parsed", ...) {
+    query <- list('restype' = "container")
 
-  request <- AzureRequest$new(
-    method = "PUT",
-    path = paste0("/", containerName),
-    query = query
-  )
+    request <- AzureRequest$new(
+      method = "PUT",
+      path = paste0("/", containerName),
+      query = query
+    )
 
-  callStorage(request, content, ...)
-}
+    callStorage(request, content, ...)
+  }
 
 deleteBlob <-
   function(containerName, blobName, content = "parsed", ...) {
@@ -263,7 +265,8 @@ uploadChunk <-
 
     `%fun%` <- foreach::`%do%`
     parallelThreads <- 1
-    if (!is.null(args$parallelThreads) && args$parallelThreads > 1) {
+    if (!is.null(args$parallelThreads) &&
+        args$parallelThreads > 1) {
       require(doParallel)
       parallelThreads <- args$parallelThreads
       registerDoParallel(parallelThreads)
@@ -305,10 +308,12 @@ uploadChunk <-
                              blockId <- paste0(blockId, 0)
                            }
 
-                           blockId <- RCurl::base64Encode(enc2utf8(blockId))
+                           blockId <-
+                             RCurl::base64Encode(enc2utf8(blockId))
 
                            headers <- c()
-                           headers['Content-Length'] <- as.character(length(data))
+                           headers['Content-Length'] <-
+                             as.character(length(data))
                            headers['x-ms-blob-type'] <- 'BlockBlob'
 
                            request <- AzureRequest$new(
@@ -325,7 +330,8 @@ uploadChunk <-
                          }
 
 
-      if (!is.null(args$parallelThreads) && args$parallelThreads > 1) {
+      if (!is.null(args$parallelThreads) &&
+          args$parallelThreads > 1) {
         require(doParallel)
         doParallel::stopImplicitCluster()
         foreach::registerDoSEQ()
