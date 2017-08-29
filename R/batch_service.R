@@ -63,8 +63,6 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
 
   requestHeaders <- httr::add_headers(.headers = headers, "User-Agent"=paste0("rAzureBatch/", packageVersion("rAzureBatch"), ";", "doAzureParallel/", packageVersion("doAzureParallel")))
 
-  response <- ""
-
   url <- paste0(credentials$url, request$path)
 
   config <- getOption("az_config")
@@ -83,19 +81,36 @@ callBatchService <- function(request, credentials, body = NULL, writeFlag = FALS
     print(requestHeaders)
   }
 
-  response <- httr::VERB(request$method,
-                   url,
-                   config = requestHeaders,
-                   verboseMode,
-                   write,
-                   query = request$query,
-                   body = body,
-                   encode = "json")
+  # The httr::VERB command does not work with for HEAD requests
+  # due to request preparation in the httr library
+  if (request$method == "HEAD") {
+    response <- httr::HEAD(
+      url = url,
+      config = requestHeaders,
+      verboseMode,
+      write,
+      query = request$query,
+      body = body,
+      encode = "json"
+    )
+  }
+  else {
+    response <- httr::VERB(
+      request$method,
+      url = url,
+      config = requestHeaders,
+      verboseMode,
+      write,
+      query = request$query,
+      body = body,
+      encode = "json"
+    )
+  }
 
-  if(!is.null(contentType) && contentType){
+  if (!is.null(contentType) && contentType) {
     httr::content(response, as = "text")
   }
-  else{
+  else {
     httr::content(response)
   }
 }
