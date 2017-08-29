@@ -53,19 +53,30 @@ callStorageSas <- function(request, accountName, sasToken, ...) {
 
   requestHeaders <- httr::add_headers(.headers = headers)
 
-  httpTraffic <- getOption("azureHttpTraffic")
+  body <- NULL
+  httpTraffic <- NULL
+  write <- NULL
+
+  httpTrafficFlag <- getOption("azureHttpTraffic")
   verbose <- getOption("azureVerbose")
 
-  if (verbose) {
+  if (!is.null(verbose) && verbose) {
     print(headers)
     print(paste0("URL: ", url))
   }
 
-  if (httpTraffic) {
+  if (!is.null(httpTrafficFlag) && httpTrafficFlag) {
     httpTraffic <- httr::verbose()
   }
 
-  write <- NULL
+  if (length(request$body) != 0) {
+    body <- request$body
+  }
+
+  if (hasArg("uploadFile")) {
+    body <- args$uploadFile
+  }
+
   if (!is.null(args$write)) {
     write <- args$write
   }
@@ -133,41 +144,6 @@ listBlobs <- function(containerName, ...) {
   callStorage(request, ...)
 }
 
-listContainers <- function(content = "parsed", ...) {
-  query <- list('comp' = "list")
-
-  request <- AzureRequest$new(method = "GET",
-                              path = paste0("/"),
-                              query = query)
-
-  callStorage(request, content, ...)
-}
-
-deleteContainer <- function(containerName, content = "parsed", ...) {
-  query <- list('restype' = "container")
-
-  request <- AzureRequest$new(
-    method = "DELETE",
-    path = paste0("/", containerName),
-    query = query
-  )
-
-  callStorage(request, ...)
-}
-
-createContainer <-
-  function(containerName, content = "parsed", ...) {
-    query <- list('restype' = "container")
-
-    request <- AzureRequest$new(
-      method = "PUT",
-      path = paste0("/", containerName),
-      query = query
-    )
-
-    callStorage(request, content, ...)
-  }
-
 deleteBlob <-
   function(containerName, blobName, content = "parsed", ...) {
     request <- AzureRequest$new(method = "DELETE",
@@ -179,8 +155,8 @@ deleteBlob <-
 uploadBlob <-
   function(containerName,
            fileDirectory,
-           sasToken = NULL,
            parallelThreads = 1,
+           content = "parsed",
            ...) {
     args <- list(...)
 
@@ -212,11 +188,10 @@ uploadBlob <-
       request <- AzureRequest$new(
         method = "PUT",
         path = paste0("/", containerName, "/", blobName),
-        headers = headers,
-        body = endFile
+        headers = headers
       )
 
-      callStorage(request, ...)
+      callStorage(request, content, uploadFile = endFile, ...)
     }
     else{
       uploadChunk(containerName, fileDirectory, parallelThreads = parallelThreads, ...)
@@ -418,5 +393,5 @@ downloadBlob <- function(containerName,
   request <- AzureRequest$new(method = "GET",
                               path = paste0("/", containerName, "/", blobName))
 
-  callStorage(request, write, ...)
+  callStorage(request, write = write, ...)
 }

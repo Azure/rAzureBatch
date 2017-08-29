@@ -98,6 +98,10 @@ executeAzureRequest <- function(request, ...) {
     body <- request$body
   }
 
+  if (hasArg("uploadFile")) {
+    body <- args$uploadFile
+  }
+
   if (hasArg("write")) {
     write <- args$write
   }
@@ -111,7 +115,9 @@ executeAzureRequest <- function(request, ...) {
   # Execute request with http method
   if (request$method == "GET" ||
       request$method == "POST" ||
-      request$method == "DELETE" || request$method == "PUT") {
+      request$method == "DELETE" ||
+      request$method == "PUT" ||
+      request$method == "PATCH") {
     httr::VERB(
       request$method,
       request$url,
@@ -137,7 +143,7 @@ executeAzureRequest <- function(request, ...) {
   else {
     stop(
       sprintf(
-        "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, or DELETE",
+        "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, PUT, PATCH or DELETE",
         request$method
       )
     )
