@@ -1,8 +1,10 @@
-addPool <- function(poolId, vmSize, content = "parsed", ...){
+addPool <- function(poolId, vmSize, content = "parsed", ...) {
   args <- list(...)
 
-  commands <- c("export PATH=/anaconda/envs/py35/bin:$PATH",
-                "env PATH=$PATH pip install --no-dependencies blobxfer")
+  commands <- c(
+    "export PATH=/anaconda/envs/py35/bin:$PATH",
+    "env PATH=$PATH pip install --no-dependencies blobxfer"
+  )
 
   if (!is.null(args$packages)) {
     commands <- c(commands, args$packages)
@@ -42,22 +44,26 @@ addPool <- function(poolId, vmSize, content = "parsed", ...){
 
   batchCredentials <- getBatchCredentials()
 
-  body = list(vmSize = vmSize,
-              id = poolId,
-              startTask = startTask,
-              virtualMachineConfiguration = virtualMachineConfiguration,
-              enableAutoScale = enableAutoScale,
-              autoScaleFormula = autoscaleFormula,
-              autoScaleEvaluationInterval = autoScaleEvaluationInterval,
-              maxTasksPerNode = maxTasksPerNode)
+  body = list(
+    vmSize = vmSize,
+    id = poolId,
+    startTask = startTask,
+    virtualMachineConfiguration = virtualMachineConfiguration,
+    enableAutoScale = enableAutoScale,
+    autoScaleFormula = autoscaleFormula,
+    autoScaleEvaluationInterval = autoScaleEvaluationInterval,
+    maxTasksPerNode = maxTasksPerNode
+  )
 
   body <- Filter(length, body)
 
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers <- c()
   headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
 
   request <- AzureRequest$new(
     method = "POST",
@@ -70,7 +76,7 @@ addPool <- function(poolId, vmSize, content = "parsed", ...){
   callBatchService(request, batchCredentials, content)
 }
 
-deletePool <- function(poolId, content = "parsed"){
+deletePool <- function(poolId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
@@ -86,36 +92,34 @@ deletePool <- function(poolId, content = "parsed"){
   callBatchService(request, batchCredentials, content)
 }
 
-getPool <- function(poolId, content = "parsed"){
+getPool <- function(poolId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
     method = "GET",
     path = paste0("/pools/", poolId),
-    query = list("api-version" = apiVersion))
+    query = list("api-version" = apiVersion)
+  )
 
   callBatchService(request, batchCredentials, content)
 }
 
-resizePool <- function(poolId, content = "parsed", ...){
+resizePool <- function(poolId, content = "parsed", ...) {
   batchCredentials = getBatchCredentials()
   args = list(...)
 
   autoscaleFormula <- ""
-  if(!is.null(args$autoscaleFormula)){
-    autoscaleFormula <- .getFormula(args$autoscaleFormula)
-  }
-
-  autoscaleInterval <- ""
-  if(!is.null(args$autoscaleInterval)){
-    autoscaleFormula <- .getFormula(args$autoscaleInterval)
+  if (!is.null(args$autoscaleFormula)) {
+    autoscaleFormula <- args$autoscaleFormula
   }
 
   body <- list("autoScaleFormula" = autoscaleFormula)
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers <- character()
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
   headers['Content-Length'] <- size
 
   request <- AzureRequest$new(
@@ -123,12 +127,13 @@ resizePool <- function(poolId, content = "parsed", ...){
     path = paste0("/pools/", poolId, "/evaluateautoscale"),
     query = list("api-version" = apiVersion),
     headers = headers,
-    body = body)
+    body = body
+  )
 
   callBatchService(request, batchCredentials, content)
 }
 
-listPoolNodes <- function(poolId, content = "parsed", ...){
+listPoolNodes <- function(poolId, content = "parsed", ...) {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -140,15 +145,26 @@ listPoolNodes <- function(poolId, content = "parsed", ...){
   callBatchService(request, batchCredentials, content)
 }
 
-listJobs <- function(query = list(), content = "parsed"){
+rebootNode <- function(poolId, nodeId, content = "parsed", ...) {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
-    method = "GET",
-    path = paste0("/jobs"),
-    query = append(list("api-version" = apiVersion), query)
+    method = "POST",
+    path = paste0("/pools/", poolId, "/nodes/", nodeId, "/reboot"),
+    query = list("api-version" = apiVersion)
   )
 
   callBatchService(request, batchCredentials, content)
 }
 
+reimageNode <- function(poolId, nodeId, content = "parsed", ...) {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "POST",
+    path = paste0("/pools/", poolId, "/nodes/", nodeId, "/reimage"),
+    query = list("api-version" = apiVersion)
+  )
+
+  callBatchService(request, batchCredentials, content)
+}

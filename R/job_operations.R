@@ -1,23 +1,9 @@
-#' Add a job to the specified pool.
-#'
-#' @param jobId A string that uniquely identifies the job within the account.
-#' @param ... Further named parameters
-#' \itemize{
-#'  \item{"resourceFiles"}: {A list of files that the Batch service will download to the compute node before running the command line.}
-#'  \item{"args"}: {Arguments in the foreach parameters that will be used for the task running.}
-#'  \item{"packages"}: {A list of packages that the Batch service will download to the compute node.}
-#'  \item{"envir"}: {The R environment that the task will run under.}
-#'}
-#' @return The request to the Batch service was successful.
-#' @export
 addJob <- function(jobId,
                    poolInfo,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
                    content = "parsed",
                    ...) {
-  args <- list(...)
-
   batchCredentials <- getBatchCredentials()
 
   body <- list(
@@ -48,15 +34,7 @@ addJob <- function(jobId,
   callBatchService(request, batchCredentials, content)
 }
 
-#' Gets information about the specified job.
-#'
-#' @param jobId The id of the job.
-#'
-#' @return A response containing the job.
-#' @examples
-#' getJob(job-001)
-#' @export
-getJob <- function(jobId, content = "parsed"){
+getJob <- function(jobId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -68,15 +46,7 @@ getJob <- function(jobId, content = "parsed"){
   callBatchService(request, batchCredentials, content)
 }
 
-#' Deletes a job.
-#' @details Deleting a job also deletes all tasks that are part of that job, and all job statistics. This also overrides the retention period for task data; that is, if the job contains tasks which are still retained on compute nodes, the Batch services deletes those tasks' working directories and all their contents.
-#' @param jobId The id of the job to delete..
-#'
-#' @return The request to the Batch service was successful.
-#' @examples
-#' deleteJob(job-001)
-#' @export
-deleteJob <- function(jobId, content = "parsed"){
+deleteJob <- function(jobId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
@@ -117,6 +87,18 @@ updateJob <- function(jobId, content = "parsed", ...) {
     query = list("api-version" = apiVersion),
     headers = headers,
     body = body
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
+
+listJobs <- function(query = list(), content = "parsed") {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs"),
+    query = append(list("api-version" = apiVersion), query)
   )
 
   callBatchService(request, batchCredentials, content)

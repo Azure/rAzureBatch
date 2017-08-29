@@ -53,22 +53,16 @@ callStorageSas <- function(request, accountName, sasToken, ...) {
 
   requestHeaders <- httr::add_headers(.headers = headers)
 
-  response <- ""
-  config <- getOption("az_config")
-
-  verbose <- ifelse(
-    !is.null(config) && !is.null(config$settings),
-    config$settings$verbose,
-    getOption("verbose")
-  )
-
-  verboseMode <- NULL
+  httpTraffic <- getOption("azureHttpTraffic")
+  verbose <- getOption("azureVerbose")
 
   if (verbose) {
     print(headers)
     print(paste0("URL: ", url))
+  }
 
-    verboseMode <- httr::verbose()
+  if (httpTraffic) {
+    httpTraffic <- httr::verbose()
   }
 
   write <- NULL
@@ -79,7 +73,7 @@ callStorageSas <- function(request, accountName, sasToken, ...) {
   response <- httr::VERB(
     request$method,
     url,
-    verboseMode,
+    httpTraffic,
     write,
     query = request$query,
     config = requestHeaders,
@@ -114,19 +108,19 @@ callStorage <- function(request, content, ...) {
   args <- list(...)
 
   if (!is.null(args$sasToken) && !is.null(args$accountName))  {
-    response <- callStorageSas(request, args$sasToken, args$accountName)
+    response <- callStorageSas(request, args$sasToken, args$accountName, ...)
   }
   else {
     credentials <- getStorageCredentials()
 
     request <- prepareStorageRequest(request, credentials)
-    response <- executeAzureRequest(request)
+    response <- executeAzureRequest(request, ...)
   }
 
   extractAzureResponse(response, content)
 }
 
-listBlobs <- function(containerName, sasToken = NULL, ...) {
+listBlobs <- function(containerName, ...) {
   query <- list('restype' = "container", 'comp' = "list")
 
   request <- AzureRequest$new(
@@ -224,29 +218,14 @@ uploadBlob <-
       request <- AzureRequest$new(
         method = "PUT",
         path = paste0("/", containerName, "/", blobName),
-        headers = headers
+        headers = headers,
+        body = endFile
       )
 
-      if (!is.null(sasToken)) {
-        callStorageSas(request, name, body = endFile, sas_params = sasToken)
-      }
-      else {
-        callStorage(request, storageCredentials, body = endFile)
-      }
+      callStorage(request, ...)
     }
     else{
-      if (!is.null(sasToken)) {
-        uploadChunk(
-          containerName,
-          fileDirectory,
-          parallelThreads = parallelThreads,
-          sasToken = sasToken,
-          accountName = name
-        )
-      }
-      else {
-        uploadChunk(containerName, fileDirectory, parallelThreads = parallelThreads, ...)
-      }
+      uploadChunk(containerName, fileDirectory, parallelThreads = parallelThreads, ...)
     }
   }
 
@@ -340,18 +319,7 @@ uploadChunk <-
                                           'blockid' = blockId)
                            )
 
-                           if (is.null(sasToken)) {
-                             storageCredentials <- getStorageCredentials()
-                             callStorage(request, credentials = storageCredentials, body = data)
-                           }
-                           else{
-                             callStorageSas(
-                               request,
-                               accountName = accountName,
-                               body = data,
-                               sas_params = sasToken
-                             )
-                           }
+                           callStorage(request, ...)
 
                            return(paste0("<Latest>", blockId, "</Latest>"))
                          }
@@ -377,6 +345,7 @@ uploadChunk <-
     httpBodyRequest <-
       paste0("<?xml version='1.0' encoding='utf-8'?>", httpBodyRequest)
 
+    callStorage()
     if (is.null(sasToken)) {
       putBlockList(containerName, blobName, httpBodyRequest)
     }
@@ -397,12 +366,6 @@ putBlockList <-
            body,
            sasToken = NULL,
            ...) {
-    args <- list(...)
-
-    if (is.null(args$accountName)) {
-      storageCredentials <- getStorageCredentials()
-    }
-
     headers <- c()
     headers['Content-Length'] <- nchar(body)
     headers['Content-Type'] <- 'text/xml'
@@ -411,32 +374,15 @@ putBlockList <-
       method = "PUT",
       path = paste0("/", containerName, "/", fileName),
       headers = headers,
-      query = list('comp' = "blocklist")
+      query = list('comp' = "blocklist"),
+      body
     )
 
-    if (!is.null(sasToken)) {
-      callStorageSas(
-        request,
-        accountName = args$accountName,
-        sas_params = sasToken,
-        body = body
-      )
-    }
-    else {
-      callStorage(request, storageCredentials, body)
-    }
+    callStorage(request, ...)
   }
 
 getBlockList <-
-  function(containerName, fileName, sasToken = NULL, ...) {
-    if (!is.null(args$accountName)) {
-      name <- args$accountName
-    }
-    else{
-      storageCredentials <- getStorageCredentials()
-      name <- storageCredentials$name
-    }
-
+  function(containerName, fileName, ...) {
     request <- AzureRequest$new(
       method = "GET",
       path = paste0("/", containerName, "/", fileName),
@@ -444,12 +390,7 @@ getBlockList <-
                    'blocklisttype' = "all")
     )
 
-    if (!is.null(sasToken)) {
-      callStorageSas(request, name, sas_params = sasToken)
-    }
-    else {
-      callStorage(request, storageCredentials)
-    }
+    callStorage(request, ...)
   }
 
 uploadDirectory <- function(containerName, fileDirectory, ...) {
@@ -464,32 +405,18 @@ uploadDirectory <- function(containerName, fileDirectory, ...) {
 
 downloadBlob <- function(containerName,
                          blobName,
-                         sasToken = NULL,
                          overwrite = FALSE,
+                         localDest = NULL,
                          ...) {
-  args <- list(...)
-
-  if (!is.null(args$localDest)) {
-    write <- httr::write_disk(args$localDest, overwrite)
+  if (!is.null(localDest)) {
+    write <- httr::write_disk(localDest, overwrite)
   }
   else {
     write <- httr::write_memory()
   }
 
-  if (is.null(args$accountName)) {
-    storageCredentials <- getStorageCredentials()
-  }
-
   request <- AzureRequest$new(method = "GET",
                               path = paste0("/", containerName, "/", blobName))
 
-  if (!is.null(sasToken)) {
-    callStorageSas(request,
-                   args$accountName,
-                   sas_params = sasToken,
-                   write = write)
-  }
-  else {
-    callStorage(request, storageCredentials, write = write)
-  }
+  callStorage(request, write, ...)
 }

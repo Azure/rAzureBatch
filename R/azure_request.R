@@ -86,19 +86,32 @@ signAzureRequest <- function(request, resource, key, prefix) {
 }
 
 executeAzureRequest <- function(request, ...) {
+  args <- list(...)
+
   body <- NULL
   httpTraffic <- NULL
   write <- NULL
 
+  httpTraffic <- getOption("azureHttpTraffic")
+
   if (length(request$body) != 0) {
     body <- request$body
+  }
+
+  if (hasArg("write")) {
+    write <- args$write
+  }
+
+  if (!is.null(httpTraffic) && httpTraffic) {
+    httpTraffic <- httr::verbose()
   }
 
   requestHeaders <- httr::add_headers(request$headers)
 
   # Execute request with http method
   if (request$method == "GET" ||
-      request$method == "POST" || request$method == "DELETE") {
+      request$method == "POST" ||
+      request$method == "DELETE" || request$method == "PUT") {
     httr::VERB(
       request$method,
       request$url,
