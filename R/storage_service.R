@@ -485,12 +485,13 @@ uploadDirectory <- function(containerName, fileDirectory, ...){
 downloadBlob <- function(containerName,
                          blobName,
                          sasToken = NULL,
+                         localDest = NULL,
                          overwrite = FALSE,
                          ...){
   args <- list(...)
 
-  if(!is.null(args$localDest)){
-    write <- httr::write_disk(args$localDest, overwrite)
+  if(!is.null(localDest)){
+    write <- httr::write_disk(localDest, overwrite)
   }
   else {
     write <- httr::write_memory()
