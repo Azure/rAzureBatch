@@ -122,6 +122,11 @@ callStorage <- function(request, credentials, body = NULL, ...){
     verbose <- getOption("verbose")
   }
 
+  write <- NULL
+  if(!is.null(args$write)){
+    write <- args$write
+  }
+  
   response <- ""
   if(verbose){
     print(paste0("Resource String: ", canonicalizedResource))
@@ -129,11 +134,11 @@ callStorage <- function(request, credentials, body = NULL, ...){
     print(headers)
     print(paste0("URL: ", url))
 
-    response <- httr::VERB(request$method, url, query = request$query, config = requestHeaders, body=body, verbose())
+    response <- httr::VERB(request$method, url, write, query = request$query, config = requestHeaders, body=body, verbose())
     cat(httr::content(response, "text"), "\n")
   }
   else{
-    response <- httr::VERB(request$method, url, query = request$query, config = requestHeaders, body=body)
+    response <- httr::VERB(request$method, url, write, query = request$query, config = requestHeaders, body=body)
   }
 
   if(!is.null(contentType) && contentType){
@@ -480,12 +485,13 @@ uploadDirectory <- function(containerName, fileDirectory, ...){
 downloadBlob <- function(containerName,
                          blobName,
                          sasToken = NULL,
+                         localDest = NULL,
                          overwrite = FALSE,
                          ...){
   args <- list(...)
 
-  if(!is.null(args$localDest)){
-    write <- httr::write_disk(args$localDest, overwrite)
+  if(!is.null(localDest)){
+    write <- httr::write_disk(localDest, overwrite)
   }
   else {
     write <- httr::write_memory()
