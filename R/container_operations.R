@@ -1,5 +1,5 @@
-listContainers <- function(content = "parsed", ...) {
-  query <- list('comp' = "list")
+listContainers <- function(prefix = "", content = "parsed", ...) {
+  query <- list('comp' = "list", 'prefix' = prefix)
 
   request <- AzureRequest$new(method = "GET",
                               path = paste0("/"),
@@ -17,7 +17,7 @@ deleteContainer <- function(containerName, content = "parsed", ...) {
     query = query
   )
 
-  callStorage(request, ...)
+  callStorage(request, content, ...)
 }
 
 createContainer <-

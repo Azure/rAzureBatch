@@ -61,9 +61,9 @@ prepareBatchRequest <- function(request, credentials) {
   request
 }
 
-callBatchService <- function(request, credentials, content){
+callBatchService <- function(request, credentials, content, ...){
   request <- prepareBatchRequest(request, credentials)
-  response <- executeAzureRequest(request)
+  response <- executeAzureRequest(request, ...)
 
   extractAzureResponse(response, content)
 }

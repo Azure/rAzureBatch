@@ -91,6 +91,7 @@ executeAzureRequest <- function(request, ...) {
   body <- NULL
   httpTraffic <- NULL
   write <- NULL
+  progressBar <- NULL
 
   httpTraffic <- getOption("azureHttpTraffic")
 
@@ -104,6 +105,10 @@ executeAzureRequest <- function(request, ...) {
 
   if (hasArg("write")) {
     write <- args$write
+  }
+
+  if (hasArg("progress") && args$progress) {
+    progressBar <- httr::progress()
   }
 
   if (!is.null(httpTraffic) && httpTraffic) {
@@ -126,7 +131,8 @@ executeAzureRequest <- function(request, ...) {
       query = request$query,
       encode = "json",
       write,
-      httpTraffic
+      httpTraffic,
+      progressBar
     )
   }
   else if (request$method == "HEAD") {
@@ -137,7 +143,8 @@ executeAzureRequest <- function(request, ...) {
       query = request$query,
       encode = "json",
       write,
-      httpTraffic
+      httpTraffic,
+      progressBar
     )
   }
   else {
@@ -151,8 +158,11 @@ executeAzureRequest <- function(request, ...) {
 }
 
 extractAzureResponse <- function(response, content) {
-  if (content %in% c("raw", "text", "parsed")) {
-    httr::content(response, content)
+  if (is.null(content)) {
+    httr::content(response, encoding = "UTF-8")
+  }
+  else if (content %in% c("raw", "text", "parsed")) {
+    httr::content(response, content, encoding = "UTF-8")
   }
   else if (content == "response") {
     response
@@ -160,6 +170,6 @@ extractAzureResponse <- function(response, content) {
   # Legacy code: By default it will, automatically attempt
   # figure out which one is most appropriate
   else {
-    httr::content(response)
+    httr::content(response, encoding = "UTF-8")
   }
 }
