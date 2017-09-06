@@ -60,7 +60,7 @@ uploadBlob <-
       callStorage(request, content, uploadFile = endFile, ...)
     }
     else {
-      uploadChunk(containerName, fileDirectory, parallelThreads = parallelThreads, ...)
+      uploadChunk(containerName, fileDirectory, content = content, parallelThreads = parallelThreads, ...)
     }
   }
 

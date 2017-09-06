@@ -1,7 +1,7 @@
 uploadChunk <-
   function(containerName,
            fileDirectory,
-           sasToken = NULL,
+           content = "parsed",
            ...) {
     args <- list(...)
 
@@ -23,13 +23,27 @@ uploadChunk <-
 
     pb <- txtProgressBar(min = 0, max = numOfChunks, style = 3)
 
+    sasToken <- args$sasToken
+    accountName <- args$accountName
+    config <- getOption("az_config")
+    if (is.null(config) &&
+        (is.null(sasToken) || is.null(accountName))) {
+      stop(
+        paste(
+          "Missing authentication information: Use",
+          "setCredentials or provide sasToken and accountName"
+        )
+      )
+    }
+
     `%fun%` <- foreach::`%do%`
     parallelThreads <- 1
     if (!is.null(args$parallelThreads) &&
         args$parallelThreads > 1) {
       require(doParallel)
       parallelThreads <- args$parallelThreads
-      doParallel::registerDoParallel(parallelThreads)
+      cluster <- parallel::makeCluster(parallelThreads, outfile = "stdout.txt")
+      doParallel::registerDoParallel(cluster)
       `%fun%` <- foreach::`%dopar%`
     }
 
@@ -49,52 +63,62 @@ uploadChunk <-
       chunk <- readBin(readBytes, raw(), n = defaultSize * count)
 
       results <-
-        foreach::foreach(i = 0:(count - 1),
-                         .export = c("sasToken", "accountName")) %fun% {
-                           blockSize <- i * defaultSize
+        foreach::foreach(
+          i = 0:(count - 1),
+          .export = c("sasToken", "accountName", "config", "chunk", "content")
+        ) %fun% {
+          options("az_config" = config)
 
-                           if (i == count - 1) {
-                             data <- chunk[(blockSize + 1):length(chunk)]
-                           }
-                           else {
-                             data <-
-                               chunk[(blockSize + 1):(blockSize + defaultSize)]
-                           }
+          blockSize <- i * defaultSize
 
-                           blockId <- currentChunk + i
-                           currLength <- 8 - nchar(blockId)
+          if (i == count - 1) {
+            data <- chunk[(blockSize + 1):length(chunk)]
+          }
+          else {
+            data <-
+              chunk[(blockSize + 1):(blockSize + defaultSize)]
+          }
 
-                           for (j in 1:currLength)
-                           {
-                             blockId <- paste0(blockId, 0)
-                           }
+          blockId <- currentChunk + i
+          currLength <- 8 - nchar(blockId)
 
-                           blockId <-
-                             RCurl::base64Encode(enc2utf8(blockId))
+          for (j in 1:currLength)
+          {
+            blockId <- paste0(blockId, 0)
+          }
 
-                           headers <- c()
-                           headers['Content-Length'] <-
-                             as.character(length(data))
-                           headers['x-ms-blob-type'] <- 'BlockBlob'
+          blockId <-
+            RCurl::base64Encode(enc2utf8(blockId))
 
-                           request <- AzureRequest$new(
-                             method = "PUT",
-                             path = paste0("/", containerName, "/", blobName),
-                             headers = headers,
-                             query = list('comp' = "block",
-                                          'blockid' = blockId)
-                           )
+          headers <- c()
+          headers['Content-Length'] <-
+            as.character(length(data))
+          headers['x-ms-blob-type'] <- 'BlockBlob'
 
-                           callStorage(request, ...)
+          request <- AzureRequest$new(
+            method = "PUT",
+            path = paste0("/", containerName, "/", blobName),
+            headers = headers,
+            query = list('comp' = "block",
+                         'blockid' = blockId)
+          )
 
-                           return(paste0("<Latest>", blockId, "</Latest>"))
-                         }
+          print(length(data))
+          print(data[1:10])
+          callStorage(request,
+                      content = NULL,
+                      body = data,
+                      progress = TRUE,
+                      ...)
+
+          return(paste0("<Latest>", blockId, "</Latest>"))
+        }
 
 
       if (!is.null(args$parallelThreads) &&
           args$parallelThreads > 1) {
         require(doParallel)
-        doParallel::stopImplicitCluster()
+        parallel::stopCluster(cluster)
         foreach::registerDoSEQ()
       }
 
@@ -112,7 +136,7 @@ uploadChunk <-
     httpBodyRequest <-
       paste0("<?xml version='1.0' encoding='utf-8'?>", httpBodyRequest)
 
-    putBlockList(containerName, blobName, httpBodyRequest, ...)
+    putBlockList(containerName, blobName, body = httpBodyRequest, ...)
   }
 
 putBlockList <-
@@ -155,6 +179,10 @@ uploadDirectory <- function(containerName, fileDirectory, ...) {
 
   for (i in 1:length(files))
   {
-    uploadBlob(containerName, files[i], remoteName = fileName[i], content = "parsed", ...)
+    uploadBlob(containerName,
+               files[i],
+               remoteName = fileName[i],
+               content = "parsed",
+               ...)
   }
 }
