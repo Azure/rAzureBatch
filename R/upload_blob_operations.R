@@ -42,8 +42,7 @@ uploadChunk <-
         args$parallelThreads > 1) {
       require(doParallel)
       parallelThreads <- args$parallelThreads
-      cluster <- parallel::makeCluster(parallelThreads, outfile = "stdout.txt")
-      doParallel::registerDoParallel(cluster)
+      doParallel::registerDoParallel(parallelThreads)
       `%fun%` <- foreach::`%dopar%`
     }
 
@@ -65,7 +64,7 @@ uploadChunk <-
       results <-
         foreach::foreach(
           i = 0:(count - 1),
-          .export = c("sasToken", "accountName", "config", "chunk", "content")
+          .export = c("sasToken", "accountName", "content")
         ) %fun% {
           options("az_config" = config)
 
@@ -103,13 +102,13 @@ uploadChunk <-
                          'blockid' = blockId)
           )
 
-          print(length(data))
-          print(data[1:10])
-          callStorage(request,
-                      content = NULL,
-                      body = data,
-                      progress = TRUE,
-                      ...)
+          callStorage(
+            request,
+            content = NULL,
+            body = data,
+            progress = TRUE,
+            ...
+          )
 
           return(paste0("<Latest>", blockId, "</Latest>"))
         }
@@ -118,7 +117,7 @@ uploadChunk <-
       if (!is.null(args$parallelThreads) &&
           args$parallelThreads > 1) {
         require(doParallel)
-        parallel::stopCluster(cluster)
+        doParallel::stopImplicitCluster()
         foreach::registerDoSEQ()
       }
 
@@ -136,14 +135,18 @@ uploadChunk <-
     httpBodyRequest <-
       paste0("<?xml version='1.0' encoding='utf-8'?>", httpBodyRequest)
 
-    putBlockList(containerName, blobName, body = httpBodyRequest, ...)
+    putBlockList(containerName,
+                 blobName,
+                 content = "response",
+                 body = httpBodyRequest,
+                 ...)
   }
 
 putBlockList <-
   function(containerName,
            fileName,
            body,
-           content = "parsed",
+           content = "text",
            ...) {
     headers <- c()
     headers['Content-Length'] <- nchar(body)
@@ -153,11 +156,10 @@ putBlockList <-
       method = "PUT",
       path = paste0("/", containerName, "/", fileName),
       headers = headers,
-      query = list('comp' = "blocklist"),
-      body
+      query = list('comp' = "blocklist")
     )
 
-    callStorage(request, content, ...)
+    callStorage(request, content, body = body, ...)
   }
 
 getBlockList <-

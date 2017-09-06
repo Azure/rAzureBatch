@@ -77,6 +77,10 @@ callStorageSas <- function(request, accountName, sasToken, ...) {
     body <- args$uploadFile
   }
 
+  if (hasArg("body")) {
+    body <- args$body
+  }
+
   if (!is.null(args$write)) {
     write <- args$write
   }

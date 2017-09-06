@@ -93,7 +93,7 @@ executeAzureRequest <- function(request, ...) {
   write <- NULL
   progressBar <- NULL
 
-  httpTraffic <- getOption("azureHttpTraffic")
+  httpTrafficFlag <- getOption("azureHttpTraffic")
 
   if (length(request$body) != 0) {
     body <- request$body
@@ -101,6 +101,10 @@ executeAzureRequest <- function(request, ...) {
 
   if (hasArg("uploadFile")) {
     body <- args$uploadFile
+  }
+
+  if (hasArg("body")) {
+    body <- args$body
   }
 
   if (hasArg("write")) {
@@ -111,7 +115,7 @@ executeAzureRequest <- function(request, ...) {
     progressBar <- httr::progress()
   }
 
-  if (!is.null(httpTraffic) && httpTraffic) {
+  if (!is.null(httpTrafficFlag) && httpTrafficFlag) {
     httpTraffic <- httr::verbose()
   }
 
