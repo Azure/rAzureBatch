@@ -145,13 +145,17 @@ listPoolNodes <- function(poolId, content = "parsed", ...) {
   callBatchService(request, batchCredentials, content)
 }
 
-rebootNode <- function(poolId, nodeId, content = "parsed", ...) {
+rebootNode <- function(poolId, nodeId, content = "response", ...) {
   batchCredentials <- getBatchCredentials()
+
+  headers <- c()
+  headers['Content-Length'] <- '0'
 
   request <- AzureRequest$new(
     method = "POST",
     path = paste0("/pools/", poolId, "/nodes/", nodeId, "/reboot"),
-    query = list("api-version" = apiVersion)
+    query = list("api-version" = apiVersion),
+    headers = headers
   )
 
   callBatchService(request, batchCredentials, content)
