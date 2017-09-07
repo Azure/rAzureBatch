@@ -1,20 +1,5 @@
-#' Add a task to the specified job.
-#'
-#' @param jobId The id of the job to which the task is to be added.
-#' @param taskId A string that uniquely identifies the task within the job.
-#' @param ... Further named parameters
-#' \itemize{
-#'  \item{"resourceFiles"}: {A list of files that the Batch service will download to the compute node before running the command line.}
-#'  \item{"args"}: {Arguments in the foreach parameters that will be used for the task running.}
-#'  \item{"packages"}: {A list of packages that the Batch service will download to the compute node.}
-#'  \item{"envir"}: {The R environment that the task will run under.}
-#'}
-#' @return The response of task
-#' @examples
-#' addTask(job-001, task-001)
-addTask <- function(jobId, taskId = "default", ...){
+addTask <- function(jobId, taskId = "default", content = "parsed", ...){
   batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
 
   args <- list(...)
   environmentSettings <- args$environmentSettings
@@ -23,11 +8,11 @@ addTask <- function(jobId, taskId = "default", ...){
   dependsOn <- args$dependsOn
   outputFiles <- args$outputFiles
 
-  if(is.null(commandLine)){
+  if (is.null(commandLine)) {
     stop("Task requires a command line.")
   }
 
-  body = list(id = taskId,
+  body <- list(id = taskId,
               commandLine = commandLine,
               userIdentity = list(
                 autoUser = list(
@@ -45,7 +30,7 @@ addTask <- function(jobId, taskId = "default", ...){
 
   body <- Filter(length, body)
 
-  size <- nchar(rjson::toJSON(body, method="C"))
+  size <- nchar(rjson::toJSON(body, method = "C"))
 
   headers <- c()
   headers['Content-Length'] <- size
@@ -55,13 +40,14 @@ addTask <- function(jobId, taskId = "default", ...){
     method = "POST",
     path = paste0("/jobs/", jobId, "/tasks"),
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body)
+  callBatchService(request, batchCredentials, content)
 }
 
-listTask <- function(jobId, ...){
+listTask <- function(jobId, content = "parsed", ...){
   batchCredentials <- getBatchCredentials()
 
   args <- list(...)
@@ -81,5 +67,5 @@ listTask <- function(jobId, ...){
     query = query
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
