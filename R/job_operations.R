@@ -104,13 +104,27 @@ listJobs <- function(query = list(), content = "parsed") {
   callBatchService(request, batchCredentials, content)
 }
 
-getJobPreparationStatus <- function(jobId, content = "parsed") {
+getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
   batchCredentials <- getBatchCredentials()
+  args <- list(...)
+  query = list("api-version" = apiVersion)
+
+  if (hasArg("filter")) {
+    query["$filter"] <- args$filter
+  }
+
+  if (hasArg("select")) {
+    query["$select"] <- args$select
+  }
+
+  if (hasArg("maxresults")) {
+    query["maxresults"] <- args$maxresults
+  }
 
   request <- AzureRequest$new(
     method = "GET",
-    path = paste0("/jobs/", jobId, "jobpreparationandreleasetaskstatus"),
-    query = list("api-version" = apiVersion)
+    path = paste0("/jobs/", jobId, "/jobpreparationandreleasetaskstatus"),
+    query = query
   )
 
   callBatchService(request, batchCredentials, content)
