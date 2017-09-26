@@ -142,7 +142,7 @@ getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
 #' getJobTaskCounts(job-001)
 #' }
 #' @export
-getJobTaskCounts <- function(jobId){
+getJobTaskCounts <- function(jobId) {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
