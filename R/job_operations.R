@@ -142,7 +142,7 @@ getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
 #' getJobTaskCounts(job-001)
 #' }
 #' @export
-getJobTaskCounts <- function(jobId) {
+getJobTaskCounts <- function(jobId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -151,5 +151,5 @@ getJobTaskCounts <- function(jobId) {
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
