@@ -1,63 +1,42 @@
-#' Add a job to the specified pool.
-#'
-#' @param jobId A string that uniquely identifies the job within the account.
-#' @param ... Further named parameters
-#' \itemize{
-#'  \item{"resourceFiles"}: {A list of files that the Batch service will download to the compute node before running the command line.}
-#'  \item{"args"}: {Arguments in the foreach parameters that will be used for the task running.}
-#'  \item{"packages"}: {A list of packages that the Batch service will download to the compute node.}
-#'  \item{"envir"}: {The R environment that the task will run under.}
-#'}
-#' @return The request to the Batch service was successful.
-#' @examples
-#' addJob(job-001, packages = c("devtools", "httr"))
-#' @export
 addJob <- function(jobId,
                    poolInfo,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
+                   content = "parsed",
                    metadata,
-                   raw = FALSE,
-                   ...){
-
-  args <- list(...)
-
+                   ...) {
   batchCredentials <- getBatchCredentials()
-  storageCredentials <- getStorageCredentials()
 
-  body <- list(id=jobId,
-              poolInfo = poolInfo,
-              jobPreparationTask = jobPreparationTask,
-              usesTaskDependencies = usesTaskDependencies,
-              metadata = metadata)
+  body <- list(
+    id = jobId,
+    poolInfo = poolInfo,
+    jobPreparationTask = jobPreparationTask,
+    usesTaskDependencies = usesTaskDependencies,
+    metadata = metadata
+  )
 
   body <- Filter(length, body)
 
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers <- character()
   headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
 
   request <- AzureRequest$new(
     method = "POST",
     path = "/jobs",
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body, contentType = raw)
+  callBatchService(request, batchCredentials, content)
 }
 
-#' Gets information about the specified job.
-#'
-#' @param jobId The id of the job.
-#'
-#' @return A response containing the job.
-#' @examples
-#' getJob(job-001)
-#' @export
-getJob <- function(jobId){
+getJob <- function(jobId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   request <- AzureRequest$new(
@@ -66,18 +45,10 @@ getJob <- function(jobId){
     query = list("api-version" = apiVersion)
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
-#' Deletes a job.
-#' @details Deleting a job also deletes all tasks that are part of that job, and all job statistics. This also overrides the retention period for task data; that is, if the job contains tasks which are still retained on compute nodes, the Batch services deletes those tasks' working directories and all their contents.
-#' @param jobId The id of the job to delete..
-#'
-#' @return The request to the Batch service was successful.
-#' @examples
-#' deleteJob(job-001)
-#' @export
-deleteJob <- function(jobId){
+deleteJob <- function(jobId, content = "parsed") {
   batchCredentials <- getBatchCredentials()
 
   headers <- c()
@@ -90,32 +61,75 @@ deleteJob <- function(jobId){
     headers = headers
   )
 
-  callBatchService(request, batchCredentials)
+  callBatchService(request, batchCredentials, content)
 }
 
 #' Updates the properties of the specified job.
 #'
 #' @param jobId The id of the job.
+#' @param ... Additional parameters to customize update the job
 #' @return The request to the Batch service was successful.
 #' @export
-updateJob <- function(jobId, ...){
+updateJob <- function(jobId, content = "parsed", ...) {
   batchCredentials <- getBatchCredentials()
 
   headers <- character()
 
-  body = list(onAllTasksComplete = "terminatejob")
-  size <- nchar(jsonlite::toJSON(body, method="C", auto_unbox = TRUE))
+  body <- list(onAllTasksComplete = "terminatejob")
+  size <-
+    nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
   headers['Content-Length'] <- size
-  headers['Content-Type'] <- 'application/json;odata=minimalmetadata'
+  headers['Content-Type'] <-
+    'application/json;odata=minimalmetadata'
+
   request <- AzureRequest$new(
     method = "PATCH",
     path = paste0("/jobs/", jobId),
     query = list("api-version" = apiVersion),
-    headers = headers
+    headers = headers,
+    body = body
   )
 
-  callBatchService(request, batchCredentials, body)
+  callBatchService(request, batchCredentials, content)
+}
+
+listJobs <- function(query = list(), content = "parsed") {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs"),
+    query = append(list("api-version" = apiVersion), query)
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
+
+getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
+  batchCredentials <- getBatchCredentials()
+  args <- list(...)
+  query = list("api-version" = apiVersion)
+
+  if (hasArg("filter")) {
+    query["$filter"] <- args$filter
+  }
+
+  if (hasArg("select")) {
+    query["$select"] <- args$select
+  }
+
+  if (hasArg("maxresults")) {
+    query["maxresults"] <- args$maxresults
+  }
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs/", jobId, "/jobpreparationandreleasetaskstatus"),
+    query = query
+  )
+
+  callBatchService(request, batchCredentials, content)
 }
 
 #' Gets job task counts by job state.
