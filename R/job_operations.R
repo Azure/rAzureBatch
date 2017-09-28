@@ -153,3 +153,19 @@ getJobTaskCounts <- function(jobId, content = "parsed") {
 
   callBatchService(request, batchCredentials, content)
 }
+
+terminateJob <- function(jobId, content = "response"){
+  batchCredentials <- getBatchCredentials()
+
+  headers <- c()
+  headers['Content-Length'] <- '0'
+
+  request <- AzureRequest$new(
+    method = "POST",
+    path = paste0("/jobs/", jobId, "/terminate"),
+    query = list("api-version" = apiVersion),
+    headers = headers
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
