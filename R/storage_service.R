@@ -95,7 +95,7 @@ callStorageSas <- function(request, accountName, sasToken, ...) {
     body = body
   )
 
-  httr::stop_for_status(response)
+  response
 }
 
 prepareStorageRequest <- function(request, credentials) {
