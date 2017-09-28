@@ -3,7 +3,7 @@ addJob <- function(jobId,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
                    content = "parsed",
-                   metadata,
+                   metadata = NULL,
                    ...) {
   batchCredentials <- getBatchCredentials()
 
