@@ -3,6 +3,7 @@ addJob <- function(jobId,
                    jobPreparationTask = NULL,
                    usesTaskDependencies = FALSE,
                    content = "parsed",
+                   metadata = NULL,
                    ...) {
   batchCredentials <- getBatchCredentials()
 
@@ -10,7 +11,8 @@ addJob <- function(jobId,
     id = jobId,
     poolInfo = poolInfo,
     jobPreparationTask = jobPreparationTask,
-    usesTaskDependencies = usesTaskDependencies
+    usesTaskDependencies = usesTaskDependencies,
+    metadata = metadata
   )
 
   body <- Filter(length, body)
@@ -125,6 +127,28 @@ getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
     method = "GET",
     path = paste0("/jobs/", jobId, "/jobpreparationandreleasetaskstatus"),
     query = query
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
+
+#' Gets job task counts by job state.
+#'
+#' @param jobId The id of the job.
+#'
+#' @return A response containing the task counts of different states.
+#' @examples
+#' \dontrun{
+#' getJobTaskCounts(job-001)
+#' }
+#' @export
+getJobTaskCounts <- function(jobId, content = "parsed") {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/jobs/", jobId, "/taskcounts"),
+    query = list("api-version" = apiVersion)
   )
 
   callBatchService(request, batchCredentials, content)
