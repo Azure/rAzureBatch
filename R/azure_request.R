@@ -99,19 +99,19 @@ executeAzureRequest <- function(request, ...) {
     body <- request$body
   }
 
-  if (hasArg("uploadFile")) {
+  if (methods::hasArg("uploadFile")) {
     body <- args$uploadFile
   }
 
-  if (hasArg("body")) {
+  if (methods::hasArg("body")) {
     body <- args$body
   }
 
-  if (hasArg("write")) {
+  if (methods::hasArg("write")) {
     write <- args$write
   }
 
-  if (hasArg("progress") && args$progress) {
+  if (methods::hasArg("progress") && args$progress) {
     progressBar <- httr::progress()
   }
 

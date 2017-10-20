@@ -1,7 +1,7 @@
 Package: rAzureBatch
 Type: Package
 Title: rAzureBatch
-Version: 0.5.1
+Version: 0.5.2
 Author: Brian Hoang
 Maintainer: Brian Hoang <brhoan@microsoft.com>
 Description: The project is for data experts who use R at scale. The project
@@ -18,7 +18,8 @@ Imports:
     rjson (>= 0.2.15),
     RCurl (>= 1.95-4.8),
     digest (>=  0.6.9),
-    jsonlite
+    jsonlite,
+    methods
 Suggests:
     testthat
 RoxygenNote: 5.0.1

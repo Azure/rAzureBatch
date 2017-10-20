@@ -111,15 +111,15 @@ getJobPreparationStatus <- function(jobId, content = "parsed", ...) {
   args <- list(...)
   query = list("api-version" = apiVersion)
 
-  if (hasArg("filter")) {
+  if (methods::hasArg("filter")) {
     query["$filter"] <- args$filter
   }
 
-  if (hasArg("select")) {
+  if (methods::hasArg("select")) {
     query["$select"] <- args$select
   }
 
-  if (hasArg("maxresults")) {
+  if (methods::hasArg("maxresults")) {
     query["maxresults"] <- args$maxresults
   }
 
