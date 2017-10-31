@@ -53,6 +53,9 @@ signAzureRequest <- function(request, resource, key, prefix) {
   headers <- request$headers
   canonicalizedHeaders <- ""
 
+  systemLocale <- Sys.getlocale(category = "LC_COLLATE")
+  Sys.setlocale("LC_COLLATE", "C")
+
   for (name in sort(names(headers))) {
     if (grepl(prefix, name)) {
       canonicalizedHeaders <-
@@ -82,6 +85,7 @@ signAzureRequest <- function(request, resource, key, prefix) {
            ":",
            request$signString(stringToSign, key))
 
+  Sys.setlocale("LC_COLLATE", systemLocale)
   return(authorizationString)
 }
 
