@@ -75,6 +75,8 @@ signAzureRequest <- function(request, resource, key, prefix) {
   stringToSign <- paste0(stringToSign, canonicalizedHeaders)
   stringToSign <- paste0(stringToSign, canonicalizedResource)
 
+  print(stringToSign)
+
   # sign the request
   authorizationString <-
     paste0("SharedKey ",
