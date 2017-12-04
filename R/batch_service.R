@@ -51,7 +51,7 @@ prepareBatchRequest <- function(request, credentials) {
     paste0(
       "rAzureBatch/",
       packageVersion("rAzureBatch"),
-      ";",
+      " ",
       "doAzureParallel/",
       packageVersion("doAzureParallel")
     )
