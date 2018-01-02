@@ -49,6 +49,30 @@ addTask <- function(jobId, taskId = "default", content = "parsed", ...){
   callBatchService(request, batchCredentials, content)
 }
 
+addTaskCollection <- function(jobId, tasks, content = "parsed", ...){
+  batchCredentials <- getBatchCredentials()
+
+  args <- list(...)
+  body <- tasks
+  body <- Filter(length, body)
+
+  size <- nchar(rjson::toJSON(body, method = "C"))
+
+  headers <- c()
+  headers['Content-Length'] <- size
+  headers['Content-Type'] <- "application/json;odata=minimalmetadata"
+
+  request <- AzureRequest$new(
+    method = "POST",
+    path = paste0("/jobs/", jobId, "/addtaskcollection"),
+    query = list("api-version" = apiVersion),
+    headers = headers,
+    body = body
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
+
 getTask <- function(jobId, taskId, content = "parsed", ...){
   batchCredentials <- getBatchCredentials()
   query <- list("api-version" = apiVersion)
