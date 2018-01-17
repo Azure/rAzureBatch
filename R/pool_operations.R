@@ -40,11 +40,17 @@ addPool <- function(poolId, vmSize, content = "parsed", ...) {
     autoScaleEvaluationInterval <- args$autoScaleEvaluationInterval
   }
 
+  metadata <- NULL
+  if (!is.null(args$metadata)) {
+  	metadata <- args$metadata
+  }
+
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
   batchCredentials <- getBatchCredentials()
 
   body <- list(
+    metadata = metadata,
     vmSize = vmSize,
     id = poolId,
     startTask = startTask,
