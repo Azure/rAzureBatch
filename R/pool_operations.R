@@ -40,11 +40,17 @@ addPool <- function(poolId, vmSize, content = "parsed", ...) {
     autoScaleEvaluationInterval <- args$autoScaleEvaluationInterval
   }
 
+  metadata <- NULL
+  if (!is.null(args$metadata)) {
+  	metadata <- args$metadata
+  }
+
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
   batchCredentials <- getBatchCredentials()
 
   body <- list(
+    metadata = metadata,
     vmSize = vmSize,
     id = poolId,
     startTask = startTask,
@@ -128,6 +134,18 @@ resizePool <- function(poolId, content = "parsed", ...) {
     query = list("api-version" = apiVersion),
     headers = headers,
     body = body
+  )
+
+  callBatchService(request, batchCredentials, content)
+}
+
+listPools <- function(query = list(), content = "parsed") {
+  batchCredentials <- getBatchCredentials()
+
+  request <- AzureRequest$new(
+    method = "GET",
+    path = paste0("/pools"),
+    query = append(list("api-version" = apiVersion), query)
   )
 
   callBatchService(request, batchCredentials, content)
