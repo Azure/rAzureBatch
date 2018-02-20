@@ -119,7 +119,13 @@ resizePool <- function(poolId, content = "parsed", ...) {
     autoscaleFormula <- args$autoscaleFormula
   }
 
-  body <- list("autoScaleFormula" = autoscaleFormula)
+  autoscaleInterval <- "PT5M"
+  if (!is.null(args$autoscaleInterval)) {
+    autoscaleInterval <- args$autoscaleInterval
+  }
+
+  body <- list("autoScaleFormula" = autoscaleFormula,
+               "autoScaleEvaluationInterval" = autoscaleInterval)
   size <-
     nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
 
@@ -130,7 +136,7 @@ resizePool <- function(poolId, content = "parsed", ...) {
 
   request <- AzureRequest$new(
     method = "POST",
-    path = paste0("/pools/", poolId, "/evaluateautoscale"),
+    path = paste0("/pools/", poolId, "/enableautoscale"),
     query = list("api-version" = apiVersion),
     headers = headers,
     body = body
