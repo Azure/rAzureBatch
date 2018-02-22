@@ -19,7 +19,8 @@ Imports:
     RCurl (>= 1.95-4.8),
     digest (>=  0.6.9),
     jsonlite,
-    methods
+    methods,
+    R6
 Suggests:
     testthat
 RoxygenNote: 5.0.1

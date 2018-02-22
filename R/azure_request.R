@@ -49,6 +49,41 @@ AzureRequest <- setRefClass(
   )
 )
 
+AzureRequestV2 <- R6::R6Class(
+  "AzureRequestV2",
+  public = list(
+    method = NULL,
+    path = NULL,
+    headers = NULL,
+    query = NULL,
+    body = NULL,
+    initialize = function(method = NULL,
+                          path = NULL,
+                          headers = NULL,
+                          query = NULL,
+                          body = NULL) {
+      self$method <- method
+      self$path <- path
+      self$headers <- headers
+      if (is.null(self$headers)) {
+        self$headers <- character()
+      }
+
+      self$query <- query
+      self$body <- body
+    },
+    encryptSignature = function(x, key) {
+      undecodedKey <- RCurl::base64Decode(key, mode = "raw")
+      RCurl::base64(digest::hmac(
+        key = undecodedKey,
+        object = enc2utf8(x),
+        algo = "sha256",
+        raw = TRUE
+      ))
+    }
+  )
+)
+
 signAzureRequest <- function(request, resource, key, prefix) {
   headers <- request$headers
   canonicalizedHeaders <- ""
@@ -181,3 +216,33 @@ extractAzureResponse <- function(response, content) {
     httr::content(response, encoding = "UTF-8")
   }
 }
+
+AzureServiceClient <- R6::R6Class(
+  "AzureServiceClient",
+  public = list(
+    url = NULL,
+    authentication = NULL,
+    apiVersion = NULL,
+    verbose = FALSE,
+    initialize = function(url = NA, authentication = NA) {
+      self$url <- url
+      self$authentication <- authentication
+    },
+    extractAzureResponse = function(response, content) {
+      if (is.null(content)) {
+        httr::content(response, encoding = "UTF-8")
+      }
+      else if (content %in% c("raw", "text", "parsed")) {
+        httr::content(response, content, encoding = "UTF-8")
+      }
+      else if (content == "response") {
+        response
+      }
+      # Legacy code: By default it will, automatically attempt
+      # figure out which one is most appropriate
+      else {
+        httr::content(response, encoding = "UTF-8")
+      }
+    }
+  )
+)

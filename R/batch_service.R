@@ -42,6 +42,179 @@ BatchCredentials <- setRefClass(
   )
 )
 
+AzureCredentials <- R6::R6Class(
+  "AzureCredentials",
+  public = list(
+    getClassName = function(){
+      private$className
+    }
+  ),
+  private = list(
+    className = "AzureCredentials"
+  )
+)
+
+ServicePrincipalCredentials <- R6::R6Class(
+  "ServicePrincipalCredentials",
+  inherit = AzureCredentials,
+  public = list(
+    tenantId = NULL,
+    clientId = NULL,
+    clientSecrets = NULL,
+    initialize = function(tenantId = NA, clientId = NA, clientSecrets = NA) {
+      self$tenantId <- tenantId
+      self$clientId <- clientId
+      self$clientSecrets <- clientSecrets
+    }
+  ),
+  private = list(
+    className = "ServicePrincipalCredentials"
+  )
+)
+
+SharedKeyCredentials <- R6::R6Class(
+  "SharedKeyCredentials",
+  inherit = AzureCredentials,
+  public = list(
+    name = NULL,
+    key = NULL,
+    initialize = function(name = NA, key = NA) {
+      self$name <- name
+      self$key <- key
+    },
+    signRequest = function(request, prefix) {
+      headers <- request$headers
+      canonicalizedHeaders <- ""
+
+      systemLocale <- Sys.getlocale(category = "LC_COLLATE")
+      Sys.setlocale("LC_COLLATE", "C")
+
+      #if (!is.null(headers)) {
+        for (name in sort(names(headers))) {
+          if (grepl(prefix, name)) {
+            canonicalizedHeaders <-
+              paste0(canonicalizedHeaders, name, ":", headers[name], "\n")
+          }
+        }
+      #}
+
+      canonicalizedResource <- paste0("/", self$name, request$path, "\n")
+      if (!is.null(names(request$query))) {
+        for (name in sort(names(request$query))) {
+          canonicalizedResource <-
+            paste0(canonicalizedResource, name, ":", request$query[[name]], "\n")
+        }
+      }
+
+      canonicalizedResource <-
+        substr(canonicalizedResource, 1, nchar(canonicalizedResource) - 1)
+
+      stringToSign <- createSignature(request$method, request$headers)
+      stringToSign <- paste0(stringToSign, canonicalizedHeaders)
+      stringToSign <- paste0(stringToSign, canonicalizedResource)
+
+      # sign the request
+      authorizationString <-
+        paste0("SharedKey ",
+               self$name,
+               ":",
+               request$encryptSignature(stringToSign, self$key))
+
+      Sys.setlocale("LC_COLLATE", systemLocale)
+
+      request$headers['Authorization'] <- authorizationString
+
+      request
+    }
+  ),
+  private = list(
+    className = "SharedKeyCredentials"
+  )
+)
+
+BatchServiceClient <- R6::R6Class(
+  inherit = AzureServiceClient,
+  "BatchServiceClient",
+  public = list(
+    poolOperations = NULL,
+    # jobOperations = NULL,
+    # taskOperations = NULL,
+    # fileOperations = NULL,
+    apiVersion = "2017-06-01.5.1",
+    verbose = FALSE,
+    initialize = function(url = NA, authentication = NA) {
+      self$url <- url
+      self$authentication <- authentication
+      self$poolOperations <- PoolOperations$new(self, url, authentication, apiVersion)
+      # self$jobOperations <- JobOperations$new(self, url, authentication)
+      # self$taskOperations <- TaskOperations$new(self, url, authentication)
+      # self$fileOperations <- FileOperations$new(self, url, authentication)
+    },
+    execute = function(request) {
+      requestdate <- httr::http_date(Sys.time())
+      request$headers['ocp-date'] <- requestdate
+      request$headers['User-Agent'] <-
+        paste0(
+          "rAzureBatch/",
+          packageVersion("rAzureBatch"),
+          " ",
+          "doAzureParallel/",
+          packageVersion("doAzureParallel")
+        )
+
+      if (self$authentication$getClassName() == "SharedKeyCredentials") {
+        request <- self$authentication$signRequest(request,
+                                                   "ocp-")
+      }
+      # Service Principal Path
+      else {
+        request <- self$authentication
+      }
+
+      url <- paste0(self$url, request$path)
+      requestHeaders <- httr::add_headers(request$headers)
+
+      if (request$method == "GET" ||
+          request$method == "POST" ||
+          request$method == "DELETE" ||
+          request$method == "PUT" ||
+          request$method == "PATCH") {
+        httr::VERB(
+          request$method,
+          url,
+          config = requestHeaders,
+          body = request$body,
+          query = request$query,
+          encode = "json",
+          request$write,
+          request$httpTraffic,
+          request$progressBar
+        )
+      }
+      else if (request$method == "HEAD") {
+        httr::HEAD(
+          url,
+          config = requestHeaders,
+          body = request$body,
+          query = request$query,
+          encode = "json",
+          request$write,
+          request$httpTraffic,
+          request$progressBar
+        )
+      }
+      else {
+        stop(
+          sprintf(
+            "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, PUT, PATCH or DELETE",
+            request$method
+          )
+        )
+      }
+    }
+  )
+)
+
 prepareBatchRequest <- function(request, credentials, authType = "SharedKey") {
   requestdate <- httr::http_date(Sys.time())
   request$headers['ocp-date'] <- requestdate
