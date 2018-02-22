@@ -228,6 +228,47 @@ AzureServiceClient <- R6::R6Class(
       self$url <- url
       self$authentication <- authentication
     },
+    executeResponse = function(url, request) {
+      requestHeaders <- httr::add_headers(request$headers)
+
+      if (request$method == "GET" ||
+          request$method == "POST" ||
+          request$method == "DELETE" ||
+          request$method == "PUT" ||
+          request$method == "PATCH") {
+        httr::VERB(
+          request$method,
+          url,
+          config = requestHeaders,
+          body = request$body,
+          query = request$query,
+          encode = "json",
+          request$write,
+          request$httpTraffic,
+          request$progressBar
+        )
+      }
+      else if (request$method == "HEAD") {
+        httr::HEAD(
+          url,
+          config = requestHeaders,
+          body = request$body,
+          query = request$query,
+          encode = "json",
+          request$write,
+          request$httpTraffic,
+          request$progressBar
+        )
+      }
+      else {
+        stop(
+          sprintf(
+            "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, PUT, PATCH or DELETE",
+            request$method
+          )
+        )
+      }
+    },
     extractAzureResponse = function(response, content) {
       if (is.null(content)) {
         httr::content(response, encoding = "UTF-8")

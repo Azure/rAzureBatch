@@ -1,6 +1,6 @@
-JobOperations <- R6::R6Class("PoolOperations",
+JobOperations <- R6::R6Class("JobOperations",
   public = list(
-    path = "/pools",
+    path = "/jobs",
     url = NULL,
     authentication = NULL,
     client = NULL,
@@ -18,8 +18,6 @@ JobOperations <- R6::R6Class("PoolOperations",
                        content = "parsed",
                        metadata = NULL,
                        ...) {
-      batchCredentials <- getBatchCredentials()
-
       body <- list(
         id = jobId,
         poolInfo = poolInfo,
@@ -40,39 +38,38 @@ JobOperations <- R6::R6Class("PoolOperations",
 
       request <- AzureRequest$new(
         method = "POST",
-        path = "/jobs",
-        query = list("api-version" = apiVersion),
+        path = self$path,
+        query = list("api-version" = self$apiVersion),
         headers = headers,
         body = body
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     getJob = function(jobId, content = "parsed") {
-      batchCredentials <- getBatchCredentials()
-
       request <- AzureRequest$new(
         method = "GET",
-        path = paste0("/jobs/", jobId),
-        query = list("api-version" = apiVersion)
+        path = paste0(self$path, "/", jobId),
+        query = list("api-version" = self$apiVersion)
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     deleteJob = function(jobId, content = "parsed") {
-      batchCredentials <- getBatchCredentials()
-
       headers <- c()
       headers['Content-Length'] <- '0'
 
       request <- AzureRequest$new(
         method = "DELETE",
-        path = paste0("/jobs/", jobId),
-        query = list("api-version" = apiVersion),
+        path = paste0(self$path, "/", jobId),
+        query = list("api-version" = self$apiVersion),
         headers = headers
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     #' Updates the properties of the specified job.
     #'
@@ -81,8 +78,6 @@ JobOperations <- R6::R6Class("PoolOperations",
     #' @return The request to the Batch service was successful.
     #' @export
     updateJob = function(jobId, content = "parsed", ...) {
-      batchCredentials <- getBatchCredentials()
-
       headers <- character()
 
       body <- list(onAllTasksComplete = "terminatejob")
@@ -95,28 +90,28 @@ JobOperations <- R6::R6Class("PoolOperations",
 
       request <- AzureRequest$new(
         method = "PATCH",
-        path = paste0("/jobs/", jobId),
-        query = list("api-version" = apiVersion),
+        path = paste0(self$path, "/", jobId),
+        query = list("api-version" = self$apiVersion),
         headers = headers,
         body = body
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     listJobs = function(query = list(), content = "parsed") {
-      batchCredentials <- getBatchCredentials()
-
       request <- AzureRequest$new(
         method = "GET",
-        path = paste0("/jobs"),
-        query = append(list("api-version" = apiVersion), query)
+        path = self$path,
+        query = append(list("api-version" = self$apiVersion), query)
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     getJobPreparationStatus = function(jobId, content = "parsed", ...) {
       args <- list(...)
-      query = list("api-version" = apiVersion)
+      query = list("api-version" = self$apiVersion)
 
       if (methods::hasArg("filter")) {
         query["$filter"] <- args$filter
@@ -132,7 +127,7 @@ JobOperations <- R6::R6Class("PoolOperations",
 
       request <- AzureRequest$new(
         method = "GET",
-        path = paste0("/jobs/", jobId, "/jobpreparationandreleasetaskstatus"),
+        path = paste0(self$path, "/", jobId, "/jobpreparationandreleasetaskstatus"),
         query = query
       )
 
@@ -150,30 +145,28 @@ JobOperations <- R6::R6Class("PoolOperations",
     #' }
     #' @export
     getJobTaskCounts = function(jobId, content = "parsed") {
-      batchCredentials <- getBatchCredentials()
-
       request <- AzureRequest$new(
         method = "GET",
-        path = paste0("/jobs/", jobId, "/taskcounts"),
+        path = paste0(self$path, "/", jobId, "/taskcounts"),
         query = list("api-version" = apiVersion)
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     },
     terminateJob = function(jobId, content = "response"){
-      batchCredentials <- getBatchCredentials()
-
       headers <- c()
       headers['Content-Length'] <- '0'
 
       request <- AzureRequest$new(
         method = "POST",
-        path = paste0("/jobs/", jobId, "/terminate"),
+        path = paste0(self$path, "/", jobId, "/terminate"),
         query = list("api-version" = apiVersion),
         headers = headers
       )
 
-      callBatchService(request, batchCredentials, content)
+      response <- self$client$execute(request)
+      self$client$extractAzureResponse(response, content)
     }
   )
 )

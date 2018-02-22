@@ -65,10 +65,59 @@ ServicePrincipalCredentials <- R6::R6Class(
       self$tenantId <- tenantId
       self$clientId <- clientId
       self$clientSecrets <- clientSecrets
+    },
+    getAccessToken = function(resource) {
+      app_name <- 'AzureServiceCredentials'
+
+      URLGT <- paste0("https://login.microsoftonline.com/", self$tenantId, "/oauth2/token?api-version=1.0")
+      authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
+      resourceEncoded <- URLencode(resource, reserved = TRUE)
+      bodyGT <- paste0("grant_type=client_credentials", "&client_secret=", authKeyEncoded,
+                       "&client_id=", self$clientId, "&resource=", resourceEncoded)
+      r <- httr::POST(URLGT,
+                      httr::add_headers(
+                        .headers = c(`Cache-Control` = "no-cache",
+                                     `Content-type` = "application/x-www-form-urlencoded")),
+                      body = bodyGT,
+                      httr::verbose())
+
+      j1 <- httr::content(r, "parsed", encoding = "UTF-8")
+      accessToken <- paste("Bearer", j1$access_token)
+
+      private$expiration <- Sys.time() + 3590
+      private$accessToken <- accessToken
+      private$refreshToken <- j1$refresh_token
+    },
+    checkAccessToken = function(resource){
+      if (is.null(private$accessToken) || private$expiration < Sys.time()) {
+        self$getAccessToken(resource)
+      }
+
+      private$accessToken
+    },
+    getRefreshToken = function(resource) {
+      app_name <- 'AzureServiceCredentials'
+
+      URLGT <- paste0("https://login.microsoftonline.com/", self$tenantId, "/oauth2/token?api-version=1.0")
+      authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
+      resourceEncoded <- URLencode(resource, reserved = TRUE)
+      bodyGT <- paste0("grant_type=client_credentials", "&client_secret=", authKeyEncoded,
+                       "&client_id=", self$clientId, "&resource=", resourceEncoded)
+      r <- httr::POST(URLGT,
+                      httr::add_headers(
+                        .headers = c(`Cache-Control` = "no-cache",
+                                     `Content-type` = "application/x-www-form-urlencoded")),
+                      body = bodyGT,
+                      httr::verbose())
+
+      j1 <- httr::content(r, "parsed", encoding = "UTF-8")
     }
   ),
   private = list(
-    className = "ServicePrincipalCredentials"
+    className = "ServicePrincipalCredentials",
+    expiration = NULL,
+    accessToken = NULL,
+    refreshToken = NULL
   )
 )
 
@@ -122,9 +171,7 @@ SharedKeyCredentials <- R6::R6Class(
 
       Sys.setlocale("LC_COLLATE", systemLocale)
 
-      request$headers['Authorization'] <- authorizationString
-
-      request
+      authorizationString
     }
   ),
   private = list(
@@ -137,18 +184,18 @@ BatchServiceClient <- R6::R6Class(
   "BatchServiceClient",
   public = list(
     poolOperations = NULL,
-    # jobOperations = NULL,
-    # taskOperations = NULL,
-    # fileOperations = NULL,
+    jobOperations = NULL,
+    taskOperations = NULL,
+    fileOperations = NULL,
     apiVersion = "2017-06-01.5.1",
     verbose = FALSE,
     initialize = function(url = NA, authentication = NA) {
       self$url <- url
       self$authentication <- authentication
       self$poolOperations <- PoolOperations$new(self, url, authentication, apiVersion)
-      # self$jobOperations <- JobOperations$new(self, url, authentication)
-      # self$taskOperations <- TaskOperations$new(self, url, authentication)
-      # self$fileOperations <- FileOperations$new(self, url, authentication)
+      self$jobOperations <- JobOperations$new(self, url, authentication, apiVersion)
+      self$taskOperations <- TaskOperations$new(self, url, authentication, apiVersion)
+      self$fileOperations <- FileOperations$new(self, url, authentication, apiVersion)
     },
     execute = function(request) {
       requestdate <- httr::http_date(Sys.time())
@@ -163,54 +210,19 @@ BatchServiceClient <- R6::R6Class(
         )
 
       if (self$authentication$getClassName() == "SharedKeyCredentials") {
-        request <- self$authentication$signRequest(request,
+        authorizationHeader <- self$authentication$signRequest(request,
                                                    "ocp-")
       }
       # Service Principal Path
       else {
-        request <- self$authentication
+        authorizationHeader <- self$authentication$checkAccessToken(
+          'https://batch.core.windows.net/')
       }
 
+      request$headers['Authorization'] <- authorizationHeader
       url <- paste0(self$url, request$path)
-      requestHeaders <- httr::add_headers(request$headers)
 
-      if (request$method == "GET" ||
-          request$method == "POST" ||
-          request$method == "DELETE" ||
-          request$method == "PUT" ||
-          request$method == "PATCH") {
-        httr::VERB(
-          request$method,
-          url,
-          config = requestHeaders,
-          body = request$body,
-          query = request$query,
-          encode = "json",
-          request$write,
-          request$httpTraffic,
-          request$progressBar
-        )
-      }
-      else if (request$method == "HEAD") {
-        httr::HEAD(
-          url,
-          config = requestHeaders,
-          body = request$body,
-          query = request$query,
-          encode = "json",
-          request$write,
-          request$httpTraffic,
-          request$progressBar
-        )
-      }
-      else {
-        stop(
-          sprintf(
-            "This HTTP Verb is not found: %s - Please try again with GET, POST, HEAD, PUT, PATCH or DELETE",
-            request$method
-          )
-        )
-      }
+      executeResponse(url, request)
     }
   )
 )

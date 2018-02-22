@@ -35,6 +35,48 @@ StorageCredentials <- setRefClass(
   )
 )
 
+StorageServiceClient <- R6::R6Class(
+  inherit = AzureServiceClient,
+  "StorageServiceClient",
+  public = list(
+    blobOperations = NULL,
+    containerOperations = NULL,
+    apiVersion = "2016-05-31",
+    verbose = FALSE,
+    initialize = function(url = NA, authentication = NA) {
+      self$url <- url
+      self$authentication <- authentication
+      self$blobOperations <- BlobOperations$new(self, url, authentication, apiVersion)
+      self$containerOperations <- ContainerOperations$new(self, url, authentication, apiVersion)
+    },
+    execute = function(request) {
+      requestdate <- httr::http_date(Sys.time())
+      request$headers['x-ms-date'] <- requestdate
+      request$headers['x-ms-version'] <- self$apiVersion
+
+      request$headers['User-Agent'] <-
+        paste0("rAzureBatch/",
+               packageVersion("rAzureBatch"))
+
+      authorizationHeader
+      if (self$authentication$getClassName() == "SharedKeyCredentials") {
+        authorizationHeader <- self$authentication$signRequest(request,
+                                                               "x-ms-")
+      }
+      # Service Principal Path
+      else {
+        authorizationHeader <- self$authentication$checkAccessToken(
+          'https://batch.core.windows.net/')
+      }
+
+      request$headers['Authorization'] <- authorizationHeader
+      url <- paste0(self$url, request$path)
+
+      executeResponse(url, request)
+    }
+  )
+)
+
 callStorageSas <- function(request, accountName, sasToken, ...) {
   args <- list(...)
 
