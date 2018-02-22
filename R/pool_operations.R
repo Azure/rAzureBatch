@@ -1,4 +1,4 @@
-addPool <- function(poolId, vmSize, content = "parsed", ...) {
+addPool <- function(poolId, vmSize, content = "parsed", authType = "SharedKey", ...) {
   args <- list(...)
 
   commands <- c(
@@ -47,7 +47,7 @@ addPool <- function(poolId, vmSize, content = "parsed", ...) {
 
   stopifnot(grepl("^([a-zA-Z0-9]|[-]|[_]){1,64}$", poolId))
 
-  batchCredentials <- getBatchCredentials()
+  batchCredentials <- getBatchCredentials(authType = authType)
 
   body <- list(
     metadata = metadata,
