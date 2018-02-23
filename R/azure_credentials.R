@@ -17,16 +17,20 @@ ServicePrincipalCredentials <- R6::R6Class(
     tenantId = NULL,
     clientId = NULL,
     clientSecrets = NULL,
-    initialize = function(tenantId = NA, clientId = NA, clientSecrets = NA) {
+    resource = NULL,
+    initialize = function(tenantId = NA, clientId = NA, clientSecrets = NA, resource = NA) {
       self$tenantId <- tenantId
       self$clientId <- clientId
       self$clientSecrets <- clientSecrets
+      self$resource <- resource
     },
-    getAccessToken = function(resource) {
+    getAccessToken = function() {
       # Azure SMR: Get token calls
-      URLGT <- paste0("https://login.microsoftonline.com/", self$tenantId, "/oauth2/token?api-version=1.0")
+      URLGT <- paste0("https://login.microsoftonline.com/",
+                      self$tenantId,
+                      "/oauth2/token?api-version=1.0")
       authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
-      resourceEncoded <- URLencode(resource, reserved = TRUE)
+      resourceEncoded <- URLencode(self$resource, reserved = TRUE)
       bodyGT <- paste0("grant_type=client_credentials", "&client_secret=", authKeyEncoded,
                        "&client_id=", self$clientId, "&resource=", resourceEncoded)
       r <- httr::POST(URLGT,
@@ -50,11 +54,11 @@ ServicePrincipalCredentials <- R6::R6Class(
 
       private$accessToken
     },
-    getRefreshToken = function(resource) {
+    getRefreshToken = function() {
       # Azure SMR: Get token calls
       URLGT <- paste0("https://login.microsoftonline.com/", self$tenantId, "/oauth2/token?api-version=1.0")
       authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
-      resourceEncoded <- URLencode(resource, reserved = TRUE)
+      resourceEncoded <- URLencode(self$resource, reserved = TRUE)
       bodyGT <- paste0("grant_type=client_credentials", "&client_secret=", authKeyEncoded,
                        "&client_id=", self$clientId, "&resource=", resourceEncoded)
       r <- httr::POST(URLGT,
