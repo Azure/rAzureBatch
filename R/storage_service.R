@@ -58,18 +58,12 @@ StorageServiceClient <- R6::R6Class(
         paste0("rAzureBatch/",
                packageVersion("rAzureBatch"))
 
-      authorizationHeader
       if (self$authentication$getClassName() == "SharedKeyCredentials") {
         authorizationHeader <- self$authentication$signRequest(request,
                                                                "x-ms-")
-      }
-      # Service Principal Path
-      else {
-        authorizationHeader <- self$authentication$checkAccessToken(
-          'https://batch.core.windows.net/')
+        request$headers['Authorization'] <- authorizationHeader
       }
 
-      request$headers['Authorization'] <- authorizationHeader
       url <- paste0(self$url, request$path)
 
       executeResponse(url, request)

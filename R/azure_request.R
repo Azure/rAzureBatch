@@ -57,11 +57,20 @@ AzureRequestV2 <- R6::R6Class(
     headers = NULL,
     query = NULL,
     body = NULL,
+    # Httr Requests Configuration
+    write = NULL,
+    progress = NULL,
+    verbose = NULL,
+    content = NULL,
     initialize = function(method = NULL,
                           path = NULL,
                           headers = NULL,
                           query = NULL,
-                          body = NULL) {
+                          body = NULL,
+                          write = NULL,
+                          progress = NULL,
+                          verbose = NULL,
+                          content = NULL) {
       self$method <- method
       self$path <- path
       self$headers <- headers
@@ -71,6 +80,11 @@ AzureRequestV2 <- R6::R6Class(
 
       self$query <- query
       self$body <- body
+
+      self$write <- write
+      self$progress <- progress
+      self$verbose <- verbose
+      self$content <- content
     },
     encryptSignature = function(x, key) {
       undecodedKey <- RCurl::base64Decode(key, mode = "raw")
@@ -244,8 +258,8 @@ AzureServiceClient <- R6::R6Class(
           query = request$query,
           encode = "json",
           request$write,
-          request$httpTraffic,
-          request$progressBar
+          request$verbose,
+          request$progress
         )
       }
       else if (request$method == "HEAD") {
@@ -256,8 +270,8 @@ AzureServiceClient <- R6::R6Class(
           query = request$query,
           encode = "json",
           request$write,
-          request$httpTraffic,
-          request$progressBar
+          request$verbose,
+          request$progress
         )
       }
       else {
