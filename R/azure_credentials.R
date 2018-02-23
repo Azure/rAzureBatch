@@ -98,14 +98,12 @@ SharedKeyCredentials <- R6::R6Class(
       systemLocale <- Sys.getlocale(category = "LC_COLLATE")
       Sys.setlocale("LC_COLLATE", "C")
 
-      #if (!is.null(headers)) {
       for (name in sort(names(headers))) {
         if (grepl(prefix, name)) {
           canonicalizedHeaders <-
             paste0(canonicalizedHeaders, name, ":", headers[name], "\n")
         }
       }
-      #}
 
       canonicalizedResource <- paste0("/", self$name, request$path, "\n")
       if (!is.null(names(request$query))) {

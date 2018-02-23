@@ -1,12 +1,10 @@
 BlobOperations <- R6::R6Class("BlobOperations",
   public = list(
     path = "/%s",
-    url = NULL,
     authentication = NULL,
     client = NULL,
     apiVersion = NULL,
-    initialize = function(client = NA, url = NA, authentication = NA, apiVersion) {
-      self$url <- url
+    initialize = function(client = NA, authentication = NA, apiVersion) {
       self$authentication <- authentication
       self$client <- client
       self$apiVersion <- apiVersion

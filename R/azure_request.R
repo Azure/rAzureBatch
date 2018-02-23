@@ -98,6 +98,41 @@ AzureRequestV2 <- R6::R6Class(
   )
 )
 
+AzureStorageRequest <- R6::R6Class(
+  inherit = AzureRequestV2,
+  "AzureRequestV2",
+  public = list(
+    sasToken = NULL,
+    initialize = function(method = NULL,
+                          path = NULL,
+                          headers = NULL,
+                          query = NULL,
+                          body = NULL,
+                          write = NULL,
+                          progress = NULL,
+                          verbose = NULL,
+                          content = NULL,
+                          sasToken = NULL) {
+      self$method <- method
+      self$path <- path
+      self$headers <- headers
+      if (is.null(self$headers)) {
+        self$headers <- character()
+      }
+      self$query <- query
+      self$body <- body
+
+      self$write <- write
+      self$progress <- progress
+      self$verbose <- verbose
+      self$content <- content
+
+      self$sasToken <- sasToken
+    }
+  )
+)
+
+
 signAzureRequest <- function(request, resource, key, prefix) {
   headers <- request$headers
   canonicalizedHeaders <- ""
@@ -234,7 +269,6 @@ extractAzureResponse <- function(response, content) {
 AzureServiceClient <- R6::R6Class(
   "AzureServiceClient",
   public = list(
-    url = NULL,
     authentication = NULL,
     apiVersion = NULL,
     verbose = FALSE,

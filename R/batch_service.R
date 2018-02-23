@@ -30,6 +30,7 @@ BatchServiceClient <- R6::R6Class(
   inherit = AzureServiceClient,
   "BatchServiceClient",
   public = list(
+    url = NULL,
     poolOperations = NULL,
     jobOperations = NULL,
     taskOperations = NULL,

@@ -1,39 +1,23 @@
 storageVersion <- "2016-05-31"
 
-getStorageCredentials <-
-  function(configName = "az_config.json", ...) {
-    config <- getOption("az_config")
-
-    if (!is.null(config) && !is.null(config$storageAccount)) {
-      storageAccount <- config$storageAccount
-      credentials <-
-        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key)
-    }
-    else{
-      config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
-      credentials <-
-        StorageCredentials$new(name = config$storageAccount$name,
-                               key = config$storageAccount$key)
-    }
-
-    credentials
-  }
-
-StorageCredentials <- setRefClass(
-  "StorageCredentials",
-  fields = list(name = "character", key = "character"),
-  methods = list(
-    signString = function(x) {
-      undecodedKey <- RCurl::base64Decode(key, mode = "raw")
-      RCurl::base64(digest::hmac(
-        key = undecodedKey,
-        object = enc2utf8(x),
-        algo = "sha256",
-        raw = TRUE
-      ))
-    }
-  )
-)
+# getStorageCredentials <-
+#   function(configName = "az_config.json", ...) {
+#     config <- getOption("az_config")
+#
+#     if (!is.null(config) && !is.null(config$storageAccount)) {
+#       storageAccount <- config$storageAccount
+#       credentials <-
+#         StorageCredentials$new(name = storageAccount$name, key = storageAccount$key)
+#     }
+#     else{
+#       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
+#       credentials <-
+#         StorageCredentials$new(name = config$storageAccount$name,
+#                                key = config$storageAccount$key)
+#     }
+#
+#     credentials
+#   }
 
 StorageServiceClient <- R6::R6Class(
   inherit = AzureServiceClient,
@@ -43,11 +27,10 @@ StorageServiceClient <- R6::R6Class(
     containerOperations = NULL,
     apiVersion = "2016-05-31",
     verbose = FALSE,
-    initialize = function(url = NA, authentication = NA) {
-      self$url <- url
+    initialize = function(authentication = NA) {
       self$authentication <- authentication
-      self$blobOperations <- BlobOperations$new(self, url, authentication, apiVersion)
-      self$containerOperations <- ContainerOperations$new(self, url, authentication, apiVersion)
+      self$blobOperations <- BlobOperations$new(self, authentication, apiVersion)
+      self$containerOperations <- ContainerOperations$new(self, authentication, apiVersion)
     },
     execute = function(request) {
       requestdate <- httr::http_date(Sys.time())
@@ -58,15 +41,25 @@ StorageServiceClient <- R6::R6Class(
         paste0("rAzureBatch/",
                packageVersion("rAzureBatch"))
 
-      if (self$authentication$getClassName() == "SharedKeyCredentials") {
+      if (is.null(request$sasToken)) {
         authorizationHeader <- self$authentication$signRequest(request,
                                                                "x-ms-")
         request$headers['Authorization'] <- authorizationHeader
       }
+      # SasToken Path
+      else {
+        if (!is.null(request$query)) {
+          request$query <- append(request$query, request$sasToken)
+        }
+        else {
+          request$query <- request$sasToken
+        }
+      }
 
-      url <- paste0(self$url, request$path)
-
-      executeResponse(url, request)
+      url <- sprintf("https://%s.blob.core.windows.net%s",
+                     self$authentication$name,
+                     request$path)
+      self$executeResponse(url, request)
     }
   )
 )
