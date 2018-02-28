@@ -59,7 +59,7 @@ StorageServiceClient <- R6::R6Class(
       url <- sprintf("https://%s.blob.core.windows.net%s",
                      self$authentication$name,
                      request$path)
-      self$executeResponse(url, request)
+      self$executeRequest(url, request)
     }
   )
 )

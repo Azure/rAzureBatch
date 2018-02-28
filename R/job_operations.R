@@ -36,7 +36,7 @@ JobOperations <- R6::R6Class("JobOperations",
       headers['Content-Type'] <-
         'application/json;odata=minimalmetadata'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = self$path,
         query = list("api-version" = self$apiVersion),
@@ -48,7 +48,7 @@ JobOperations <- R6::R6Class("JobOperations",
       self$client$extractAzureResponse(response, content)
     },
     getJob = function(jobId, content = "parsed") {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(self$path, "/", jobId),
         query = list("api-version" = self$apiVersion)
@@ -61,7 +61,7 @@ JobOperations <- R6::R6Class("JobOperations",
       headers <- c()
       headers['Content-Length'] <- '0'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "DELETE",
         path = paste0(self$path, "/", jobId),
         query = list("api-version" = self$apiVersion),
@@ -88,7 +88,7 @@ JobOperations <- R6::R6Class("JobOperations",
       headers['Content-Type'] <-
         'application/json;odata=minimalmetadata'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "PATCH",
         path = paste0(self$path, "/", jobId),
         query = list("api-version" = self$apiVersion),
@@ -100,7 +100,7 @@ JobOperations <- R6::R6Class("JobOperations",
       self$client$extractAzureResponse(response, content)
     },
     listJobs = function(query = list(), content = "parsed") {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = self$path,
         query = append(list("api-version" = self$apiVersion), query)
@@ -125,7 +125,7 @@ JobOperations <- R6::R6Class("JobOperations",
         query["maxresults"] <- args$maxresults
       }
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(self$path, "/", jobId, "/jobpreparationandreleasetaskstatus"),
         query = query
@@ -145,7 +145,7 @@ JobOperations <- R6::R6Class("JobOperations",
     #' }
     #' @export
     getJobTaskCounts = function(jobId, content = "parsed") {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(self$path, "/", jobId, "/taskcounts"),
         query = list("api-version" = apiVersion)
@@ -158,7 +158,7 @@ JobOperations <- R6::R6Class("JobOperations",
       headers <- c()
       headers['Content-Length'] <- '0'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = paste0(self$path, "/", jobId, "/terminate"),
         query = list("api-version" = apiVersion),

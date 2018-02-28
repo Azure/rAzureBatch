@@ -63,14 +63,13 @@ BatchServiceClient <- R6::R6Class(
       }
       # Service Principal Path
       else {
-        authorizationHeader <- self$authentication$checkAccessToken(
-          'https://batch.core.windows.net/')
+        authorizationHeader <- self$authentication$checkAccessToken()
       }
 
       request$headers['Authorization'] <- authorizationHeader
       url <- paste0(self$url, request$path)
 
-      executeResponse(url, request)
+      self$executeRequest(url, request)
     }
   )
 )

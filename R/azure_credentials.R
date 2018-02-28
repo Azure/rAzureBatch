@@ -47,9 +47,9 @@ ServicePrincipalCredentials <- R6::R6Class(
       private$accessToken <- accessToken
       private$refreshToken <- j1$refresh_token
     },
-    checkAccessToken = function(resource){
+    checkAccessToken = function(){
       if (is.null(private$accessToken) || private$expiration < Sys.time()) {
-        self$getAccessToken(resource)
+        self$getAccessToken()
       }
 
       private$accessToken

@@ -39,7 +39,7 @@ FileOperations <- R6::R6Class(
             progress <- args$progress
           }
 
-          request <- AzureRequest$new(
+          request <- AzureRequestV2$new(
             method = verb,
             path = paste0("/pools/", poolId, "/nodes/", nodeId, "/files/", filePath),
             query = list("api-version" = apiVersion)
@@ -76,7 +76,7 @@ FileOperations <- R6::R6Class(
             write <- httr::write_memory()
           }
 
-          request <- AzureRequest$new(
+          request <- AzureRequestV2$new(
             method = verb,
             path = paste0("/jobs/", jobId, "/tasks/", taskId, "/files/", filePath),
             query = list("api-version" = apiVersion)

@@ -13,7 +13,7 @@ ContainerOperations <- R6::R6Class("ContainerOperations",
         query <- list('comp' = "list", 'prefix' = prefix)
 
         request <- AzureRequestV2$new(method = "GET",
-                                    path = paste0(self$path),
+                                    path = self$path,
                                     query = query)
 
         response <- self$client$execute(request)
@@ -24,7 +24,7 @@ ContainerOperations <- R6::R6Class("ContainerOperations",
 
         request <- AzureRequestV2$new(
           method = "DELETE",
-          path = paste0(self$path, '/', containerName),
+          path = paste0(self$path, containerName),
           query = query
         )
 
@@ -37,7 +37,7 @@ ContainerOperations <- R6::R6Class("ContainerOperations",
 
           request <- AzureRequestV2$new(
             method = "PUT",
-            path = paste0(self$path, '/', containerName),
+            path = paste0(self$path, containerName),
             query = query
           )
 

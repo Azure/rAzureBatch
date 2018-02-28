@@ -276,7 +276,7 @@ AzureServiceClient <- R6::R6Class(
       self$url <- url
       self$authentication <- authentication
     },
-    execute = function(url, request) {
+    executeRequest = function(url, request) {
       requestHeaders <- httr::add_headers(request$headers)
 
       if (request$method == "GET" ||

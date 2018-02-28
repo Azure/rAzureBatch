@@ -82,7 +82,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       headers['Content-Type'] <-
         'application/json;odata=minimalmetadata'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = "/pools",
         query = list("api-version" = self$apiVersion),
@@ -107,7 +107,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       headers <- c()
       headers['Content-Length'] <- '0'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "DELETE",
         path = paste0(self$path, "/", poolId),
         query = list("api-version" = self$apiVersion),
@@ -140,7 +140,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
         'application/json;odata=minimalmetadata'
       headers['Content-Length'] <- size
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = paste0(self$path, "/", poolId, "/enableautoscale"),
         query = list("api-version" = self$apiVersion),
@@ -152,7 +152,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       self$client$extractAzureResponse(response, content)
     },
     listPools = function(query = list(), content = "parsed") {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0("/pools"),
         query = append(list("api-version" = self$apiVersion), query)
@@ -162,7 +162,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       self$client$extractAzureResponse(response, content)
     },
     listPoolNodes = function(poolId, content = "parsed", ...) {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(self$path, "/", poolId, "/nodes"),
         query = list("api-version" = self$apiVersion)
@@ -175,7 +175,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       headers <- c()
       headers['Content-Length'] <- '0'
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = paste0(self$path, "/", poolId, "/nodes/", nodeId, "/reboot"),
         query = list("api-version" = apiVersion),
@@ -186,7 +186,7 @@ PoolOperations <- R6::R6Class("PoolOperations",
       self$client$extractAzureResponse(response, content)
     },
     reimageNode = function(poolId, nodeId, content = "parsed", ...) {
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = paste0(self$path, "/", poolId, "/nodes/", nodeId, "/reimage"),
         query = list("api-version" = self$apiVersion)

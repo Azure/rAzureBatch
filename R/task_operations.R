@@ -49,7 +49,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       headers['Content-Length'] <- size
       headers['Content-Type'] <- "application/json;odata=minimalmetadata"
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = sprintf(self$path, jobId),
         query = list("api-version" = self$apiVersion),
@@ -71,7 +71,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       headers['Content-Length'] <- size
       headers['Content-Type'] <- "application/json;odata=minimalmetadata"
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "POST",
         path = paste0("/jobs/", jobId, "/addtaskcollection"),
         query = list("api-version" = apiVersion),
@@ -85,7 +85,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
     getTask = function(jobId, taskId, content = "parsed", ...){
       query <- list("api-version" = apiVersion)
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(sprintf(self$path, jobId), "/", taskId),
         query = query
@@ -106,7 +106,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
         query <- list("api-version" = apiVersion)
       }
 
-      request <- AzureRequest$new(
+      request <- AzureRequestV2$new(
         method = "GET",
         path = paste0(sprintf(self$path, jobId)),
         query = query
