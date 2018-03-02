@@ -106,6 +106,7 @@ createSasToken <- function(permission,
   myList
 }
 
+
 getValueFromQuery <- function(query, header) {
   value <- "\n"
 
