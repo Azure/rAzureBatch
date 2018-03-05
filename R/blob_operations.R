@@ -99,9 +99,9 @@ BlobOperations <- R6::R6Class("BlobOperations",
         content <- "text"
       }
 
-      progress <- NULL
+      progressBar <- NULL
       if (progress) {
-        progress <- httr::progress()
+        progressBar <- httr::progress()
       }
 
       request <-
@@ -110,7 +110,7 @@ BlobOperations <- R6::R6Class("BlobOperations",
                                                  containerName),
                                          "/",
                                          blobName),
-                           progress = progress,
+                           progress = progressBar,
                            write = write,
                            content = content
                          )

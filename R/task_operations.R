@@ -11,7 +11,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
                                   self$client <- client
                                   self$apiVersion <- apiVersion
                                 },
-    addTask = function(jobId, taskId = "default", content = "parsed", ...){
+    add = function(jobId, taskId = "default", content = "parsed", ...){
       args <- list(...)
       environmentSettings <- args$environmentSettings
       resourceFiles <- args$resourceFiles
@@ -60,7 +60,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       response <- self$client$execute(request)
       self$client$extractAzureResponse(response, content)
     },
-    addTaskCollection = function(jobId, tasks, content = "parsed", ...){
+    addCollection = function(jobId, tasks, content = "parsed", ...){
       args <- list(...)
       body <- tasks
       body <- Filter(length, body)
@@ -82,7 +82,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       response <- self$client$execute(request)
       self$client$extractAzureResponse(response, content)
     },
-    getTask = function(jobId, taskId, content = "parsed", ...){
+    get = function(jobId, taskId, content = "parsed", ...){
       query <- list("api-version" = apiVersion)
 
       request <- AzureRequestV2$new(
@@ -94,7 +94,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       response <- self$client$execute(request)
       self$client$extractAzureResponse(response, content)
     },
-    listTask = function(jobId, content = "parsed", ...){
+    list = function(jobId, content = "parsed", ...){
       args <- list(...)
       skipToken <- args$skipToken
 
