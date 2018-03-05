@@ -37,8 +37,7 @@ ServicePrincipalCredentials <- R6::R6Class(
                       httr::add_headers(
                         .headers = c(`Cache-Control` = "no-cache",
                                      `Content-type` = "application/x-www-form-urlencoded")),
-                      body = bodyGT,
-                      httr::verbose())
+                      body = bodyGT)
 
       j1 <- httr::content(r, "parsed", encoding = "UTF-8")
       accessToken <- paste("Bearer", j1$access_token)
@@ -56,17 +55,15 @@ ServicePrincipalCredentials <- R6::R6Class(
     },
     getRefreshToken = function() {
       # Azure SMR: Get token calls
-      URLGT <- paste0("https://login.microsoftonline.com/", self$tenantId, "/oauth2/token?api-version=1.0")
-      authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
-      resourceEncoded <- URLencode(self$resource, reserved = TRUE)
-      bodyGT <- paste0("grant_type=client_credentials", "&client_secret=", authKeyEncoded,
-                       "&client_id=", self$clientId, "&resource=", resourceEncoded)
+      URLGT <- paste0("https://login.microsoftonline.com/", tenantID, "/oauth2/token?api-version=1.0")
+      refreshTokenEncoded <- URLencode(refreshToken, reserved = TRUE)
+      # NOTE: Providing the optional client ID fails the request!
+      bodyGT <- paste0("grant_type=refresh_token", "&refresh_token=", refreshTokenEncoded)
       r <- httr::POST(URLGT,
-                      httr::add_headers(
+                      add_headers(
                         .headers = c(`Cache-Control` = "no-cache",
                                      `Content-type` = "application/x-www-form-urlencoded")),
-                      body = bodyGT,
-                      httr::verbose())
+                      body = bodyGT)
 
       j1 <- httr::content(r, "parsed", encoding = "UTF-8")
 
