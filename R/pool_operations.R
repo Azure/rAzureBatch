@@ -53,6 +53,11 @@ PoolOperations <- R6::R6Class("PoolOperations",
         autoScaleEvaluationInterval <- args$autoScaleEvaluationInterval
       }
 
+      networkConfiguration <- NULL
+      if (!is.null(args$networkConfiguration)) {
+        networkConfiguration <- args$networkConfiguration
+      }
+
       metadata <- NULL
       if (!is.null(args$metadata)) {
         metadata <- args$metadata
@@ -69,7 +74,8 @@ PoolOperations <- R6::R6Class("PoolOperations",
         enableAutoScale = enableAutoScale,
         autoScaleFormula = autoscaleFormula,
         autoScaleEvaluationInterval = autoScaleEvaluationInterval,
-        maxTasksPerNode = maxTasksPerNode
+        maxTasksPerNode = maxTasksPerNode,
+        networkConfiguration = networkConfiguration
       )
 
       body <- Filter(length, body)
