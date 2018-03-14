@@ -8,6 +8,7 @@ addTask <- function(jobId, taskId = "default", content = "parsed", ...){
   dependsOn <- args$dependsOn
   outputFiles <- args$outputFiles
   exitConditions <- args$exitConditions
+  constraints <- args$constraints
 
   if (is.null(commandLine)) {
     stop("Task requires a command line.")
@@ -25,9 +26,7 @@ addTask <- function(jobId, taskId = "default", content = "parsed", ...){
               environmentSettings = environmentSettings,
               dependsOn = dependsOn,
               outputFiles = outputFiles,
-              constraints = list(
-                maxTaskRetryCount = 3
-              ),
+              constraints = constraints,
               exitConditions = exitConditions)
 
   body <- Filter(length, body)
