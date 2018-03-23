@@ -14,9 +14,9 @@ getStorageCredentials <-
     }
     else{
       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
-	    if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
-	  	  config$storageAccount$endpointSuffix = "core.windows.net"
-	    }
+      if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
+        config$storageAccount$endpointSuffix = "core.windows.net"
+      }
       credentials <-
         StorageCredentials$new(name = config$storageAccount$name,
                                key = config$storageAccount$key,
