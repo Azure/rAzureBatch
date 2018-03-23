@@ -127,12 +127,12 @@ createBlobUrl <-
            containerName,
            fileName = NULL,
            sasToken,
-		   storageEndpointSuffix = "core.windows.net") {
+           storageEndpointSuffix = "core.windows.net") {
     if (is.null(fileName)) {
       url <-
         sprintf("https://%s.blob.%s/%s",
                 storageAccount,
-				storageEndpointSuffix,
+                storageEndpointSuffix,
                 containerName)
     }
     else {

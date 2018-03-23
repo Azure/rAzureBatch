@@ -6,21 +6,21 @@ getStorageCredentials <-
 
     if (!is.null(config) && !is.null(config$storageAccount)) {
       storageAccount <- config$storageAccount
-	  if (is.null(storageAccount$endpointSuffix)) {
-	  	  storageAccount$endpointSuffix = "core.windows.net"
-	  }
+      if (is.null(storageAccount$endpointSuffix)) {
+        storageAccount$endpointSuffix = "core.windows.net"
+      }
       credentials <-
         StorageCredentials$new(name = storageAccount$name, key = storageAccount$key, endpointSuffix = storageAccount$endpointSuffix)
     }
     else{
       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
-	  if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
+	    if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
 	  	  config$storageAccount$endpointSuffix = "core.windows.net"
-	  }
+	    }
       credentials <-
         StorageCredentials$new(name = config$storageAccount$name,
                                key = config$storageAccount$key,
-							   endpointSuffix = config$storageAccount$endpointSuffix)
+                               endpointSuffix = config$storageAccount$endpointSuffix)
     }
 
     credentials
@@ -50,7 +50,7 @@ callStorageSas <- function(request, accountName, sasToken, endpointSuffix = "cor
   url <-
     sprintf("https://%s.blob.%s%s",
             accountName,
-			endpointSuffix,
+            endpointSuffix,
             request$path)
 
   headers <- request$headers
@@ -122,7 +122,7 @@ prepareStorageRequest <- function(request, credentials) {
   request$url <-
     sprintf("https://%s.blob.%s%s",
             credentials$name,
-			credentials$endpointSuffix,
+            credentials$endpointSuffix,
             request$path)
 
   request
