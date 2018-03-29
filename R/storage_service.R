@@ -6,21 +6,14 @@ getStorageCredentials <-
 
     if (!is.null(config) && !is.null(config$storageAccount)) {
       storageAccount <- config$storageAccount
-      if (is.null(storageAccount$endpointSuffix)) {
-        storageAccount$endpointSuffix = "core.windows.net"
-      }
       credentials <-
-        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key, endpointSuffix = storageAccount$endpointSuffix)
+        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key)
     }
     else{
       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
-      if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
-        config$storageAccount$endpointSuffix = "core.windows.net"
-      }
       credentials <-
         StorageCredentials$new(name = config$storageAccount$name,
-                               key = config$storageAccount$key,
-                               endpointSuffix = config$storageAccount$endpointSuffix)
+                               key = config$storageAccount$key)
     }
 
     credentials
@@ -28,7 +21,7 @@ getStorageCredentials <-
 
 StorageCredentials <- setRefClass(
   "StorageCredentials",
-  fields = list(name = "character", key = "character", endpointSuffix = "character"),
+  fields = list(name = "character", key = "character"),
   methods = list(
     signString = function(x) {
       undecodedKey <- RCurl::base64Decode(key, mode = "raw")
@@ -42,15 +35,14 @@ StorageCredentials <- setRefClass(
   )
 )
 
-callStorageSas <- function(request, accountName, sasToken, endpointSuffix = "core.windows.net", ...) {
+callStorageSas <- function(request, accountName, sasToken, ...) {
   args <- list(...)
 
   requestdate <- httr::http_date(Sys.time())
 
   url <-
-    sprintf("https://%s.blob.%s%s",
+    sprintf("https://%s.blob.core.windows.net%s",
             accountName,
-            endpointSuffix,
             request$path)
 
   headers <- request$headers
@@ -120,9 +112,8 @@ prepareStorageRequest <- function(request, credentials) {
            packageVersion("rAzureBatch"))
 
   request$url <-
-    sprintf("https://%s.blob.%s%s",
+    sprintf("https://%s.blob.core.windows.net%s",
             credentials$name,
-            credentials$endpointSuffix,
             request$path)
 
   request
@@ -131,9 +122,9 @@ prepareStorageRequest <- function(request, credentials) {
 callStorage <- function(request, content = NULL, ...) {
   args <- list(...)
 
-  if (!is.null(args$sasToken) && !is.null(args$accountName && !is.null(args$endpointSuffix)))  {
+  if (!is.null(args$sasToken) && !is.null(args$accountName))  {
     response <-
-      callStorageSas(request, args$accountName, args$sasToken, args$endpointSuffix, ...)
+      callStorageSas(request, args$sasToken, args$accountName, ...)
   }
   else {
     credentials <- getStorageCredentials()
