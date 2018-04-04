@@ -131,7 +131,7 @@ prepareStorageRequest <- function(request, credentials) {
 callStorage <- function(request, content = NULL, ...) {
   args <- list(...)
 
-  if (!is.null(args$sasToken) && !is.null(args$accountName && !is.null(args$endpointSuffix)))  {
+  if (!is.null(args$sasToken) && !is.null(args$accountName) && !is.null(args$endpointSuffix))  {
     response <-
       callStorageSas(request, args$accountName, args$sasToken, args$endpointSuffix, ...)
   }
