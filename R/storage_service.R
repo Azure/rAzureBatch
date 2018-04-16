@@ -30,11 +30,13 @@ StorageServiceClient <- R6::R6Class(
   inherit = AzureServiceClient,
   "StorageServiceClient",
   public = list(
+    url = NULL,
     blobOperations = NULL,
     containerOperations = NULL,
     apiVersion = "2016-05-31",
     verbose = FALSE,
-    initialize = function(authentication = NA) {
+    initialize = function(url = NA, authentication = NA) {
+      self$url <- url
       self$authentication <- authentication
       self$blobOperations <- BlobOperations$new(self, authentication, apiVersion)
       self$containerOperations <- ContainerOperations$new(self, authentication, apiVersion)
@@ -63,8 +65,8 @@ StorageServiceClient <- R6::R6Class(
         }
       }
 
-      url <- sprintf("https://%s.blob.core.windows.net%s",
-                     self$authentication$name,
+      url <- sprintf("%s%s",
+                     self$url,
                      request$path)
       self$executeRequest(url, request)
     },
