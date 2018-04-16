@@ -6,14 +6,21 @@ getStorageCredentials <-
 
     if (!is.null(config) && !is.null(config$storageAccount)) {
       storageAccount <- config$storageAccount
+      if (is.null(storageAccount$endpointSuffix)) {
+        storageAccount$endpointSuffix = "core.windows.net"
+      }
       credentials <-
-        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key)
+        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key, endpointSuffix = storageAccount$endpointSuffix)
     }
     else{
       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
+      if (!is.null(config) && !is.null(config$storageAccount) && is.null(config$storageAccount$endpointSuffix)) {
+        config$storageAccount$endpointSuffix = "core.windows.net"
+      }
       credentials <-
         StorageCredentials$new(name = config$storageAccount$name,
-                               key = config$storageAccount$key)
+                               key = config$storageAccount$key,
+                               endpointSuffix = config$storageAccount$endpointSuffix)
     }
 
     credentials
@@ -153,14 +160,15 @@ StorageServiceClient <- R6::R6Class(
   )
 )
 
-callStorageSas <- function(request, accountName, sasToken, ...) {
+callStorageSas <- function(request, accountName, sasToken, endpointSuffix = "core.windows.net", ...) {
   args <- list(...)
 
   requestdate <- httr::http_date(Sys.time())
 
   url <-
-    sprintf("https://%s.blob.core.windows.net%s",
+    sprintf("https://%s.blob.%s%s",
             accountName,
+            endpointSuffix,
             request$path)
 
   headers <- request$headers
@@ -230,8 +238,9 @@ prepareStorageRequest <- function(request, credentials) {
            packageVersion("rAzureBatch"))
 
   request$url <-
-    sprintf("https://%s.blob.core.windows.net%s",
+    sprintf("https://%s.blob.%s%s",
             credentials$name,
+            credentials$endpointSuffix,
             request$path)
 
   request
@@ -240,9 +249,9 @@ prepareStorageRequest <- function(request, credentials) {
 callStorage <- function(request, content = NULL, ...) {
   args <- list(...)
 
-  if (!is.null(args$sasToken) && !is.null(args$accountName))  {
+  if (!is.null(args$sasToken) && !is.null(args$accountName) && !is.null(args$endpointSuffix))  {
     response <-
-      callStorageSas(request, args$sasToken, args$accountName, ...)
+      callStorageSas(request, args$accountName, args$sasToken, args$endpointSuffix, ...)
   }
   else {
     credentials <- getStorageCredentials()
