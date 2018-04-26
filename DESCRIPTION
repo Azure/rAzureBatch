@@ -23,6 +23,4 @@ Imports:
     R6
 Suggests:
     testthat
-Remotes:
-  Azure/SMR
 RoxygenNote: 5.0.1
