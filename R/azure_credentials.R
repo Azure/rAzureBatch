@@ -18,15 +18,21 @@ ServicePrincipalCredentials <- R6::R6Class(
     clientId = NULL,
     clientSecrets = NULL,
     resource = NULL,
-    initialize = function(tenantId = NA, clientId = NA, clientSecrets = NA, resource = NA) {
+    aadUrl = NULL,
+    initialize = function(tenantId = NA,
+                          clientId = NA,
+                          clientSecrets = NA,
+                          resource = NA,
+                          aadUrl = "https://login.microsoftonline.us/") {
       self$tenantId <- tenantId
       self$clientId <- clientId
       self$clientSecrets <- clientSecrets
       self$resource <- resource
+      self$aadUrl <- aadUrl
     },
     getAccessToken = function() {
       # Azure SMR: Get token calls
-      URLGT <- paste0("https://login.microsoftonline.com/",
+      URLGT <- paste0(self$aadUrl,
                       self$tenantId,
                       "/oauth2/token?api-version=1.0")
       authKeyEncoded <- URLencode(self$clientSecrets, reserved = TRUE)
@@ -55,7 +61,7 @@ ServicePrincipalCredentials <- R6::R6Class(
     },
     getRefreshToken = function() {
       # Azure SMR: Get token calls
-      URLGT <- paste0("https://login.microsoftonline.com/", tenantID, "/oauth2/token?api-version=1.0")
+      URLGT <- paste0(self$aadUrl, tenantID, "/oauth2/token?api-version=1.0")
       refreshTokenEncoded <- URLencode(refreshToken, reserved = TRUE)
       # NOTE: Providing the optional client ID fails the request!
       bodyGT <- paste0("grant_type=refresh_token", "&refresh_token=", refreshTokenEncoded)
