@@ -43,7 +43,6 @@ createSasToken <- function(permission,
   myList[[signed_expiry]] <- endTime
   myList[[signed_permission]] <- permission
 
-  storageCredentials <- getStorageCredentials()
   canonicalizedResource <-
     paste0("/blob/", storageCredentials$name, "/", path, "\n")
 
@@ -106,6 +105,7 @@ createSasToken <- function(permission,
   myList[[signed_signature]] <- encString
   myList
 }
+
 
 getValueFromQuery <- function(query, header) {
   value <- "\n"

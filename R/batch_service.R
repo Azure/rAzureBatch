@@ -5,65 +5,71 @@ getBatchCredentials <- function(configPath = "az_config.json", ...) {
 
   if (!is.null(config) && !is.null(config$batchAccount)) {
     batchAccount <- config$batchAccount
-    credentials <-
-      BatchCredentials$new(name = batchAccount$name,
-                           key = batchAccount$key,
-                           url = batchAccount$url)
-  }
-  else{
-    config <- rjson::fromJSON(file = configPath)
-    credentials <-
-      BatchCredentials$new(
-        name = config$batchAccount$name,
-        key = config$batchAccount$key,
-        url = config$batchAccount$url
-      )
-  }
 
-  credentials
+    BatchCredentials$new(name = batchAccount$name,
+                         key = batchAccount$key,
+                         url = batchAccount$url)
+  }
+  else if (!is.null(config) && !is.null(config$ServicePrincipal)) {
+    servicePrincipal <- config$ServicePrincipal
+
+    servicePrincipal
+  }
+  else {
+    config <- rjson::fromJSON(file = configPath)
+
+    BatchCredentials$new(
+      name = config$batchAccount$name,
+      key = config$batchAccount$key,
+      url = config$batchAccount$url
+    )
+  }
 }
 
-BatchCredentials <- setRefClass(
-  "BatchCredentials",
-  fields = list(name = "character", key = "character", url = "character"),
-  methods = list(
-    signString = function(x) {
-      undecodedKey <- RCurl::base64Decode(key, mode = "raw")
-      RCurl::base64(digest::hmac(
-        key = undecodedKey,
-        object = enc2utf8(x),
-        algo = "sha256",
-        raw = TRUE
-      ))
+BatchServiceClient <- R6::R6Class(
+  inherit = AzureServiceClient,
+  "BatchServiceClient",
+  public = list(
+    url = NULL,
+    poolOperations = NULL,
+    jobOperations = NULL,
+    taskOperations = NULL,
+    fileOperations = NULL,
+    apiVersion = "2017-06-01.5.1",
+    verbose = FALSE,
+    initialize = function(url = NA, authentication = NA) {
+      self$url <- url
+      self$authentication <- authentication
+      self$poolOperations <- PoolOperations$new(self, url, authentication, apiVersion)
+      self$jobOperations <- JobOperations$new(self, url, authentication, apiVersion)
+      self$taskOperations <- TaskOperations$new(self, url, authentication, apiVersion)
+      self$fileOperations <- FileOperations$new(self, url, authentication, apiVersion)
+    },
+    execute = function(request) {
+      requestdate <- httr::http_date(Sys.time())
+      request$headers['ocp-date'] <- requestdate
+      request$headers['User-Agent'] <-
+        paste0(
+          "rAzureBatch/",
+          packageVersion("rAzureBatch"),
+          " ",
+          "doAzureParallel/",
+          packageVersion("doAzureParallel")
+        )
+
+      if (self$authentication$getClassName() == "SharedKeyCredentials") {
+        authorizationHeader <- self$authentication$signRequest(request,
+                                                   "ocp-")
+      }
+      # Service Principal Path
+      else {
+        authorizationHeader <- self$authentication$checkAccessToken()
+      }
+
+      request$headers['Authorization'] <- authorizationHeader
+      url <- paste0(self$url, request$path)
+
+      self$executeRequest(url, request)
     }
   )
 )
-
-prepareBatchRequest <- function(request, credentials) {
-  requestdate <- httr::http_date(Sys.time())
-  request$headers['ocp-date'] <- requestdate
-
-  authorizationHeader <-
-    signAzureRequest(request, credentials$name, credentials$key, 'ocp-')
-
-  request$headers['Authorization'] <- authorizationHeader
-  request$headers['User-Agent'] <-
-    paste0(
-      "rAzureBatch/",
-      packageVersion("rAzureBatch"),
-      " ",
-      "doAzureParallel/",
-      packageVersion("doAzureParallel")
-    )
-
-  request$url <- paste0(credentials$url, request$path)
-
-  request
-}
-
-callBatchService <- function(request, credentials, content, ...){
-  request <- prepareBatchRequest(request, credentials)
-  response <- executeAzureRequest(request, ...)
-
-  extractAzureResponse(response, content)
-}

@@ -1,34 +1,48 @@
-listContainers <- function(prefix = "", content = "parsed", ...) {
-  query <- list('comp' = "list", 'prefix' = prefix)
+ContainerOperations <- R6::R6Class("ContainerOperations",
+    public = list(
+      path = "/",
+      authentication = NULL,
+      client = NULL,
+      apiVersion = NULL,
+      initialize = function(client = NA, authentication = NA, apiVersion) {
+        self$authentication <- authentication
+        self$client <- client
+        self$apiVersion <- apiVersion
+      },
+      listContainers = function(prefix = "", content = "parsed", ...) {
+        query <- list('comp' = "list", 'prefix' = prefix)
 
-  request <- AzureRequest$new(method = "GET",
-                              path = paste0("/"),
-                              query = query)
+        request <- AzureRequestV2$new(method = "GET",
+                                    path = self$path,
+                                    query = query)
 
-  callStorage(request, content, ...)
-}
+        response <- self$client$execute(request)
+        self$client$extractAzureResponse(response, content)
+      },
+      deleteContainer = function(containerName, content = "parsed", ...) {
+        query <- list('restype' = "container")
 
-deleteContainer <- function(containerName, content = "parsed", ...) {
-  query <- list('restype' = "container")
+        request <- AzureRequestV2$new(
+          method = "DELETE",
+          path = paste0(self$path, containerName),
+          query = query
+        )
 
-  request <- AzureRequest$new(
-    method = "DELETE",
-    path = paste0("/", containerName),
-    query = query
-  )
+        response <- self$client$execute(request)
+        self$client$extractAzureResponse(response, content)
+      },
+      createContainer =
+        function(containerName, content = "parsed", ...) {
+          query <- list('restype' = "container")
 
-  callStorage(request, content, ...)
-}
+          request <- AzureRequestV2$new(
+            method = "PUT",
+            path = paste0(self$path, containerName),
+            query = query
+          )
 
-createContainer <-
-  function(containerName, content = "parsed", ...) {
-    query <- list('restype' = "container")
-
-    request <- AzureRequest$new(
-      method = "PUT",
-      path = paste0("/", containerName),
-      query = query
+          response <- self$client$execute(request)
+          self$client$extractAzureResponse(response, content)
+        }
     )
-
-    callStorage(request, content, ...)
-  }
+)
