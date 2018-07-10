@@ -80,7 +80,7 @@ BlobOperations <- R6::R6Class("BlobOperations",
           self$client$extractAzureResponse(response, content)
         }
         else {
-          uploadChunk(containerName, fileDirectory, content = content, parallelThreads = parallelThreads, ...)
+          self$uploadChunk(containerName, fileDirectory, content = content, parallelThreads = parallelThreads, ...)
         }
       },
     downloadBlob = function(containerName,
@@ -145,8 +145,12 @@ BlobOperations <- R6::R6Class("BlobOperations",
 
         sasToken <- args$sasToken
         accountName <- args$accountName
-        config <- getOption("az_config")
-        if (is.null(config) &&
+        endpointSuffix <- "core.windows.net"
+        if (!is.null(args$endpointSuffix)) {
+          endpointSuffix <- args$endpointSuffix
+        }
+
+        if (is.null(self$authentication) &&
             (is.null(sasToken) || is.null(accountName))) {
           stop(
             paste(
@@ -184,10 +188,8 @@ BlobOperations <- R6::R6Class("BlobOperations",
           results <-
             foreach::foreach(
               i = 0:(count - 1),
-              .export = c("sasToken", "accountName", "content")
+              .export = c("sasToken", "accountName", "endpointSuffix", "content")
             ) %fun% {
-              options("az_config" = config)
-
               blockSize <- i * defaultSize
 
               if (i == count - 1) {
@@ -224,12 +226,17 @@ BlobOperations <- R6::R6Class("BlobOperations",
                              'blockid' = blockId)
               )
 
+
+              self$client$execute(request)
+
               callStorage(
                 request,
                 content = NULL,
                 body = data,
                 progress = TRUE,
-                ...
+                sasToken = sasToken,
+                accountName = accountName,
+                endpointSuffix = endpointSuffix
               )
 
               return(paste0("<Latest>", blockId, "</Latest>"))
@@ -257,7 +264,7 @@ BlobOperations <- R6::R6Class("BlobOperations",
         httpBodyRequest <-
           paste0("<?xml version='1.0' encoding='utf-8'?>", httpBodyRequest)
 
-        putBlockList(containerName,
+        self$putBlockList(containerName,
                      blobName,
                      content = "response",
                      body = httpBodyRequest,
