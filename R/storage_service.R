@@ -52,13 +52,17 @@ StorageServiceClient <- R6::R6Class(
     url = NULL,
     blobOperations = NULL,
     containerOperations = NULL,
+    sasToken = NULL,
     apiVersion = "2016-05-31",
     verbose = FALSE,
-    initialize = function(url = NA, authentication = NA, sasToken = NA) {
+    initialize = function(url = NA,
+                          authentication = NA,
+                          sasToken = NULL) {
       self$url <- url
       self$authentication <- authentication
       self$blobOperations <- BlobOperations$new(self, authentication, apiVersion)
       self$containerOperations <- ContainerOperations$new(self, authentication, apiVersion)
+      self$sasToken <- sasToken
     },
     execute = function(request) {
       requestdate <- httr::http_date(Sys.time())
@@ -69,26 +73,17 @@ StorageServiceClient <- R6::R6Class(
         paste0("rAzureBatch/",
                packageVersion("rAzureBatch"))
 
-      if (is.na(sasToken) || is.null(sasToken) || is.null(request$sasToken)) {
+      if (is.null(self$sasToken)) {
         authorizationHeader <- self$authentication$signRequest(request,
                                                                "x-ms-")
         request$headers['Authorization'] <- authorizationHeader
       }
-      # Backwards compatiable
-      else if (!is.null(sasToken) && !is.null(request$sasToken)) {
-        print("Storage Client ")
-      }
-      # Backwards compatiable
-      if (!is.null(self$authentication$key)) && !is.null(request$sasToken))) {
-        print("Storage Client")
-      }
-      # SasToken Path
       else {
         if (!is.null(request$query)) {
-          request$query <- append(request$query, request$sasToken)
+          request$query <- append(request$query, self$sasToken)
         }
         else {
-          request$query <- request$sasToken
+          request$query <- self$sasToken
         }
       }
 

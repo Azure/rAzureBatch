@@ -188,7 +188,7 @@ BlobOperations <- R6::R6Class("BlobOperations",
           results <-
             foreach::foreach(
               i = 0:(count - 1),
-              .export = c("sasToken", "accountName", "endpointSuffix", "content")
+              .export = c("content")
             ) %fun% {
               blockSize <- i * defaultSize
 
@@ -223,21 +223,12 @@ BlobOperations <- R6::R6Class("BlobOperations",
                               blobName),
                 headers = headers,
                 query = list('comp' = "block",
-                             'blockid' = blockId)
+                             'blockid' = blockId),
+                body = data
               )
 
-
-              self$client$execute(request)
-
-              callStorage(
-                request,
-                content = NULL,
-                body = data,
-                progress = TRUE,
-                sasToken = sasToken,
-                accountName = accountName,
-                endpointSuffix = endpointSuffix
-              )
+              response <- self$client$execute(request)
+              self$client$extractAzureResponse(response, content)
 
               return(paste0("<Latest>", blockId, "</Latest>"))
             }
@@ -286,10 +277,12 @@ BlobOperations <- R6::R6Class("BlobOperations",
                         "/",
                         fileName),
           headers = headers,
-          query = list('comp' = "blocklist")
+          query = list('comp' = "blocklist"),
+          body = body
         )
 
-        callStorage(request, content, body = body, ...)
+        response <- self$client$execute(request)
+        self$client$extractAzureResponse(response, content)
       },
     getBlockList =
       function(containerName, fileName, content = "parsed", ...) {
@@ -302,7 +295,8 @@ BlobOperations <- R6::R6Class("BlobOperations",
                        'blocklisttype' = "all")
         )
 
-        callStorage(request, content, ...)
+        response <- self$client$execute(request)
+        self$client$extractAzureResponse(response, content)
       },
     uploadDirectory = function(containerName, fileDirectory, ...) {
       files <-
