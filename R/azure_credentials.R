@@ -123,7 +123,7 @@ SharedKeyCredentials <- R6::R6Class(
       canonicalizedResource <-
         substr(canonicalizedResource, 1, nchar(canonicalizedResource) - 1)
 
-      stringToSign <- self$createSignature(request$method, request$headers)
+      stringToSign <- private$createSignature(request$method, request$headers)
       stringToSign <- paste0(stringToSign, canonicalizedHeaders)
       stringToSign <- paste0(stringToSign, canonicalizedResource)
 
