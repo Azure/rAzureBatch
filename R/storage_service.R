@@ -1,16 +1,36 @@
 storageVersion <- "2016-05-31"
 
+getStorageClient <-
+  function() {
+    config <- getOption("az_config")
+
+    if (!is.null(config) && !is.null(config$storageClient)) {
+      storageAccount <- config$storageAccount
+      if (is.null(config$endpointSuffix)) {
+        storageAccount$endpointSuffix = "core.windows.net"
+      }
+
+      return(config$storageClient)
+    }
+
+    return(NULL)
+  }
+
 getStorageCredentials <-
   function(configName = "az_config.json", ...) {
     config <- getOption("az_config")
 
-    if (!is.null(config) && !is.null(config$storageAccount)) {
+    if (!is.null(config) && !is.null(config$storageClient)) {
       storageAccount <- config$storageAccount
-      if (is.null(storageAccount$endpointSuffix)) {
+      if (is.null(config$endpointSuffix)) {
         storageAccount$endpointSuffix = "core.windows.net"
       }
-      credentials <-
-        StorageCredentials$new(name = storageAccount$name, key = storageAccount$key, endpointSuffix = storageAccount$endpointSuffix)
+
+      credentials <- list(
+        name = config$storageClient$authentication$name,
+        key = config$storageClient$authentication$key,
+        endpointSuffix = config$endpointSuffix
+      )
     }
     else{
       config <- rjson::fromJSON(file = paste0(getwd(), "/", configName))
@@ -19,8 +39,7 @@ getStorageCredentials <-
       }
       credentials <-
         StorageCredentials$new(name = config$storageAccount$name,
-                               key = config$storageAccount$key,
-                               endpointSuffix = config$storageAccount$endpointSuffix)
+                               key = config$storageAccount$key)
     }
 
     credentials
@@ -33,13 +52,17 @@ StorageServiceClient <- R6::R6Class(
     url = NULL,
     blobOperations = NULL,
     containerOperations = NULL,
+    sasToken = NULL,
     apiVersion = "2016-05-31",
     verbose = FALSE,
-    initialize = function(url = NA, authentication = NA) {
+    initialize = function(url = NA,
+                          authentication = NA,
+                          sasToken = NULL) {
       self$url <- url
       self$authentication <- authentication
       self$blobOperations <- BlobOperations$new(self, authentication, apiVersion)
       self$containerOperations <- ContainerOperations$new(self, authentication, apiVersion)
+      self$sasToken <- sasToken
     },
     execute = function(request) {
       requestdate <- httr::http_date(Sys.time())
@@ -50,18 +73,17 @@ StorageServiceClient <- R6::R6Class(
         paste0("rAzureBatch/",
                packageVersion("rAzureBatch"))
 
-      if (is.null(request$sasToken)) {
+      if (is.null(self$sasToken)) {
         authorizationHeader <- self$authentication$signRequest(request,
                                                                "x-ms-")
         request$headers['Authorization'] <- authorizationHeader
       }
-      # SasToken Path
       else {
         if (!is.null(request$query)) {
-          request$query <- append(request$query, request$sasToken)
+          request$query <- append(request$query, self$sasToken)
         }
         else {
-          request$query <- request$sasToken
+          request$query <- self$sasToken
         }
       }
 
@@ -161,106 +183,3 @@ StorageServiceClient <- R6::R6Class(
     }
   )
 )
-
-callStorageSas <- function(request, accountName, sasToken, endpointSuffix = "core.windows.net", ...) {
-  args <- list(...)
-
-  requestdate <- httr::http_date(Sys.time())
-
-  url <-
-    sprintf("https://%s.blob.%s%s",
-            accountName,
-            endpointSuffix,
-            request$path)
-
-  headers <- request$headers
-  headers['x-ms-date'] <- requestdate
-  headers['x-ms-version'] <- storageVersion
-
-  request$query <- append(request$query, sasToken)
-
-  requestHeaders <- httr::add_headers(.headers = headers)
-
-  body <- NULL
-  httpTraffic <- NULL
-  write <- NULL
-
-  httpTrafficFlag <- getOption("azureHttpTraffic")
-  verbose <- getOption("azureVerbose")
-
-  if (!is.null(verbose) && verbose) {
-    print(headers)
-    print(paste0("URL: ", url))
-  }
-
-  if (!is.null(httpTrafficFlag) && httpTrafficFlag) {
-    httpTraffic <- httr::verbose()
-  }
-
-  if (length(request$body) != 0) {
-    body <- request$body
-  }
-
-  if (methods::hasArg("uploadFile")) {
-    body <- args$uploadFile
-  }
-
-  if (methods::hasArg("body")) {
-    body <- args$body
-  }
-
-  if (!is.null(args$write)) {
-    write <- args$write
-  }
-
-  response <- httr::VERB(
-    request$method,
-    url,
-    httpTraffic,
-    write,
-    query = request$query,
-    config = requestHeaders,
-    body = body
-  )
-
-  response
-}
-
-prepareStorageRequest <- function(request, credentials) {
-  requestdate <- httr::http_date(Sys.time())
-  request$headers['x-ms-date'] <- requestdate
-  request$headers['x-ms-version'] <- storageVersion
-
-  authorizationHeader <-
-    signAzureRequest(request, credentials$name, credentials$key, 'x-ms-')
-
-  request$headers['Authorization'] <- authorizationHeader
-  request$headers['User-Agent'] <-
-    paste0("rAzureBatch/",
-           packageVersion("rAzureBatch"))
-
-  request$url <-
-    sprintf("https://%s.blob.%s%s",
-            credentials$name,
-            credentials$endpointSuffix,
-            request$path)
-
-  request
-}
-
-callStorage <- function(request, content = NULL, ...) {
-  args <- list(...)
-
-  if (!is.null(args$sasToken) && !is.null(args$accountName) && !is.null(args$endpointSuffix))  {
-    response <-
-      callStorageSas(request, args$accountName, args$sasToken, args$endpointSuffix, ...)
-  }
-  else {
-    credentials <- getStorageCredentials()
-
-    request <- prepareStorageRequest(request, credentials)
-    response <- executeAzureRequest(request, ...)
-  }
-
-  extractAzureResponse(response, content)
-}

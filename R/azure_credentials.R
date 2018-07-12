@@ -123,7 +123,7 @@ SharedKeyCredentials <- R6::R6Class(
       canonicalizedResource <-
         substr(canonicalizedResource, 1, nchar(canonicalizedResource) - 1)
 
-      stringToSign <- createSignature(request$method, request$headers)
+      stringToSign <- private$createSignature(request$method, request$headers)
       stringToSign <- paste0(stringToSign, canonicalizedHeaders)
       stringToSign <- paste0(stringToSign, canonicalizedResource)
 
@@ -140,6 +140,31 @@ SharedKeyCredentials <- R6::R6Class(
     }
   ),
   private = list(
-    className = "SharedKeyCredentials"
+    className = "SharedKeyCredentials",
+    createSignature = function(requestMethod, headerList = character()){
+      headers <- c(
+        'Content-Encoding',
+        'Content-Language',
+        'Content-Length',
+        'Content-MD5',
+        'Content-Type',
+        'Date',
+        'If-Modified-Since',
+        'If-Match',
+        'If-None-Match',
+        'If-Unmodified-Since',
+        'Range'
+      )
+
+      stringToSign <- paste0(requestMethod, "\n")
+
+      for (name in headers) {
+        temp <- ifelse(!is.na(headerList[name]), headerList[name], "")
+
+        stringToSign <- paste0(stringToSign, temp, "\n")
+      }
+
+      return(stringToSign)
+    }
   )
 )
