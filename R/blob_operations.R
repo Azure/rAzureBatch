@@ -28,8 +28,14 @@ BlobOperations <- R6::R6Class("BlobOperations",
                              path = paste0(sprintf(self$path, containerName),
                                            "/",
                                            blobName))
+        currentSasToken <- self$client$sasToken
+        if (!is.null(args$sasToken)) {
+          self$client$sasToken <- args$sasToken
+        }
 
         response <- self$client$execute(request)
+        self$client$sasToken <- currentSasToken
+
         self$client$extractAzureResponse(response, content)
       },
     uploadBlob =
@@ -76,7 +82,14 @@ BlobOperations <- R6::R6Class("BlobOperations",
             content = content
           )
 
+          currentSasToken <- self$client$sasToken
+          if (!is.null(args$sasToken)) {
+            self$client$sasToken <- args$sasToken
+          }
+
           response <- self$client$execute(request)
+          self$client$sasToken <- currentSasToken
+
           self$client$extractAzureResponse(response, content)
         }
         else {
@@ -89,6 +102,8 @@ BlobOperations <- R6::R6Class("BlobOperations",
                              downloadPath = NULL,
                              progress = FALSE,
                              ...) {
+      args <- list(...)
+
       write <- httr::write_memory()
       if (!is.null(downloadPath)) {
         write <- httr::write_disk(downloadPath, overwrite)
@@ -115,7 +130,14 @@ BlobOperations <- R6::R6Class("BlobOperations",
                            content = content
                          )
 
+      currentSasToken <- self$client$sasToken
+      if (!is.null(args$sasToken)) {
+        self$client$sasToken <- args$sasToken
+      }
+
       response <- self$client$execute(request)
+      self$client$sasToken <- currentSasToken
+
       self$client$extractAzureResponse(response, content)
     },
     uploadChunk =
@@ -144,14 +166,13 @@ BlobOperations <- R6::R6Class("BlobOperations",
         pb <- txtProgressBar(min = 0, max = numOfChunks, style = 3)
 
         sasToken <- args$sasToken
-        accountName <- args$accountName
         endpointSuffix <- "core.windows.net"
         if (!is.null(args$endpointSuffix)) {
           endpointSuffix <- args$endpointSuffix
         }
 
         if (is.null(self$authentication) &&
-            (is.null(sasToken) || is.null(accountName))) {
+            (is.null(sasToken))) {
           stop(
             paste(
               "Missing authentication information: Use",
@@ -188,7 +209,7 @@ BlobOperations <- R6::R6Class("BlobOperations",
           results <-
             foreach::foreach(
               i = 0:(count - 1),
-              .export = c("content")
+              .export = c("content", "sasToken")
             ) %fun% {
               blockSize <- i * defaultSize
 
@@ -227,7 +248,14 @@ BlobOperations <- R6::R6Class("BlobOperations",
                 body = data
               )
 
+              currentSasToken <- self$client$sasToken
+              if (!is.null(sasToken)) {
+                self$client$sasToken <- sasToken
+              }
+
               response <- self$client$execute(request)
+              self$client$sasToken <- currentSasToken
+
               self$client$extractAzureResponse(response, content)
 
               return(paste0("<Latest>", blockId, "</Latest>"))
@@ -267,6 +295,8 @@ BlobOperations <- R6::R6Class("BlobOperations",
                body,
                content = "text",
                ...) {
+        args <- list(...)
+
         headers <- c()
         headers['Content-Length'] <- nchar(body)
         headers['Content-Type'] <- 'text/xml'
@@ -281,11 +311,20 @@ BlobOperations <- R6::R6Class("BlobOperations",
           body = body
         )
 
+        currentSasToken <- self$client$sasToken
+        if (!is.null(args$sasToken)) {
+          self$client$sasToken <- args$sasToken
+        }
+
         response <- self$client$execute(request)
+        self$client$sasToken <- currentSasToken
+
         self$client$extractAzureResponse(response, content)
       },
     getBlockList =
       function(containerName, fileName, content = "parsed", ...) {
+        args <- list(...)
+
         request <- AzureRequestV2$new(
           method = "GET",
           path = paste0(sprintf(self$path, containerName),
@@ -295,7 +334,14 @@ BlobOperations <- R6::R6Class("BlobOperations",
                        'blocklisttype' = "all")
         )
 
+        currentSasToken <- self$client$sasToken
+        if (!is.null(args$sasToken)) {
+          self$client$sasToken <- args$sasToken
+        }
+
         response <- self$client$execute(request)
+        self$client$sasToken <- currentSasToken
+
         self$client$extractAzureResponse(response, content)
       },
     uploadDirectory = function(containerName, fileDirectory, ...) {
