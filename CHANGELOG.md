@@ -1,3 +1,10 @@
+## <small>0.6.1 (2018-07-13)</small>
+
+* Automated CHANGELOG.md (#60) ([eef903d](https://github.com/Azure/rAzureBatch/commit/eef903d)), closes [#60](https://github.com/Azure/rAzureBatch/issues/60)
+* Fix: Enable Storage Client to upload files in chunks (#59) ([ce28f92](https://github.com/Azure/rAzureBatch/commit/ce28f92)), closes [#59](https://github.com/Azure/rAzureBatch/issues/59)
+
+
+
 ## 0.6.0 (2018-04-28)
 
 *  Added task collection api (#46) ([f3e14f5](https://github.com/Azure/rAzureBatch/commit/f3e14f5)), closes [#46](https://github.com/Azure/rAzureBatch/issues/46)
