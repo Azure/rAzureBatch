@@ -1,4 +1,4 @@
-apiVersion <- "2017-06-01.5.1"
+apiVersion <- "2018-03-01.6.1"
 
 getBatchCredentials <- function(configPath = "az_config.json", ...) {
   config <- getOption("az_config")
@@ -35,7 +35,7 @@ BatchServiceClient <- R6::R6Class(
     jobOperations = NULL,
     taskOperations = NULL,
     fileOperations = NULL,
-    apiVersion = "2017-06-01.5.1",
+    apiVersion = "2018-03-01.6.1",
     verbose = FALSE,
     initialize = function(url = NA, authentication = NA) {
       self$url <- url
