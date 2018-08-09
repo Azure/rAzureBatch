@@ -1,7 +1,7 @@
 Package: rAzureBatch
 Type: Package
 Title: rAzureBatch
-Version: 0.6.1
+Version: 0.6.2
 Author: Brian Hoang
 Maintainer: Brian Hoang <brhoan@microsoft.com>
 Description: The project is for data experts who use R at scale. The project

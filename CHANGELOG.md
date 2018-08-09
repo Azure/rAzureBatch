@@ -1,3 +1,10 @@
+## <small>0.6.2 (2018-08-09)</small>
+
+* Feature: Added Batch Built-In Container Support (#62) ([dc7977b](https://github.com/Azure/rAzureBatch/commit/dc7977b)), closes [#62](https://github.com/Azure/rAzureBatch/issues/62)
+* Added changelog for v0.6.1 (#61) ([f2f6239](https://github.com/Azure/rAzureBatch/commit/f2f6239)), closes [#61](https://github.com/Azure/rAzureBatch/issues/61)
+
+
+
 ## <small>0.6.1 (2018-07-13)</small>
 
 * Automated CHANGELOG.md (#60) ([eef903d](https://github.com/Azure/rAzureBatch/commit/eef903d)), closes [#60](https://github.com/Azure/rAzureBatch/issues/60)
