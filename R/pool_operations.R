@@ -200,6 +200,51 @@ PoolOperations <- R6::R6Class("PoolOperations",
 
       response <- self$client$execute(request)
       self$client$extractAzureResponse(response, content)
-    }
+    },
+    uploadBatchServiceLogs =
+      function(poolId,
+               nodeId,
+               containerUrl,
+               startTime,
+               endTime = NULL,
+               content = "parsed",
+               ...) {
+
+        dateTimeClass <- "POSIXct"
+        if (dateTimeClass %in% class(startTime)) {
+          startTime <- as.character(startTime)
+        }
+
+        if (dateTimeClass %in% class(endTime)) {
+          endTime <- as.character(endTime)
+        }
+
+        body <- list(
+          containerUrl = containerUrl,
+          startTime = startTime,
+          endTime = endTime
+        )
+
+        body <- Filter(length, body)
+
+        size <-
+          nchar(jsonlite::toJSON(body, method = "C", auto_unbox = TRUE))
+
+        headers <- c()
+        headers['Content-Length'] <- size
+        headers['Content-Type'] <-
+          'application/json;odata=minimalmetadata'
+
+        request <- AzureRequestV2$new(
+          method = "POST",
+          path = paste0(self$path, "/", poolId, "/nodes/", nodeId, "/uploadbatchservicelogs"),
+          query = list("api-version" = self$apiVersion),
+          headers = headers,
+          body = body
+        )
+
+        response <- self$client$execute(request)
+        self$client$extractAzureResponse(response, content)
+      }
   )
 )
