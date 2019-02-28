@@ -105,6 +105,8 @@ AzureServiceClient <- R6::R6Class(
       }
     },
     extractAzureResponse = function(response, content) {
+      httr::warn_for_status(response)
+
       if (is.null(content)) {
         httr::content(response, encoding = "UTF-8")
       }
