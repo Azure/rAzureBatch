@@ -99,13 +99,22 @@ TaskOperations <- R6::R6Class("TaskOperations",
     list = function(jobId, content = "parsed", ...){
       args <- list(...)
       skipToken <- args$skipToken
+      filter <- args$filter
+      select <- args$select
+
+      query <- list("api-version" = apiVersion)
 
       if (!is.null(skipToken)) {
         query <- list("api-version" = apiVersion,
                       "$skiptoken" = skipToken)
       }
-      else {
-        query <- list("api-version" = apiVersion)
+
+      if (!is.null(filter)) {
+        query[["$filter"]] <- filter
+      }
+
+      if (!is.null(select)) {
+        query[["$select"]] <- select
       }
 
       request <- AzureRequestV2$new(

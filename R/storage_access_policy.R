@@ -117,9 +117,26 @@ getValueFromQuery <- function(query, header) {
   value
 }
 
-createResourceFile <- function(url, fileName) {
-  list(blobSource = url,
-       filePath = fileName)
+createResourceFile <- function(filePath = NULL, httpUrl = NULL, storageContainerUrl = NULL,  blobPrefix = NULL) {
+  if (!is.null(httpUrl) && !is.null(storageContainerUrl))
+  {
+    stop("The storageContainerUrl and httpUrl properties are mutually exclusive and one of them must be specified.")
+  }
+
+  if (!is.null(httpUrl) && !is.null(blobPrefix))
+  {
+    stop("The blobPrefix property is valid only when storageContainerUrl is used.")
+  }
+
+  resourceFile <- list(
+    httpUrl = httpUrl,
+    storageContainerUrl = storageContainerUrl,
+    filePath = filePath,
+    blobPrefix = blobPrefix
+  )
+
+  resourceFile <- Filter(length, resourceFile)
+  resourceFile
 }
 
 createBlobUrl <-
