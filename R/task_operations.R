@@ -19,6 +19,7 @@ TaskOperations <- R6::R6Class("TaskOperations",
       dependsOn <- args$dependsOn
       outputFiles <- args$outputFiles
       exitConditions <- args$exitConditions
+      containerSettings <- args$containerSettings
 
       if (is.null(commandLine)) {
         stop("Task requires a command line.")
@@ -39,7 +40,8 @@ TaskOperations <- R6::R6Class("TaskOperations",
                    constraints = list(
                      maxTaskRetryCount = 3
                    ),
-                   exitConditions = exitConditions)
+                   exitConditions = exitConditions,
+                   containerSettings = containerSettings)
 
       body <- Filter(length, body)
 

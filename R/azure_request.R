@@ -60,6 +60,12 @@ AzureServiceClient <- R6::R6Class(
     executeRequest = function(url, request) {
       requestHeaders <- httr::add_headers(request$headers)
 
+      verbose <- options("azureHttpTraffic")
+      if (!is.null(verbose$azureHttpTraffic)
+          && verbose$azureHttpTraffic == TRUE) {
+        request$verbose <- httr::verbose()
+      }
+
       if (request$method == "GET" ||
           request$method == "POST" ||
           request$method == "DELETE" ||
@@ -99,6 +105,8 @@ AzureServiceClient <- R6::R6Class(
       }
     },
     extractAzureResponse = function(response, content) {
+      httr::warn_for_status(response)
+
       if (is.null(content)) {
         httr::content(response, encoding = "UTF-8")
       }
