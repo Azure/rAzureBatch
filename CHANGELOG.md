@@ -1,7 +1,7 @@
-##  (2019-06-14)
+## 0.7.0 (2019-06-14)
 
-
-
+* Updated R REST api version to 2018-12-01.8.0 ([f6a32ab](https://github.com/Azure/rAzureBatch/commit/f6a32ab))
+* [Breaking Change] Fix: Added httpUrl, filePath, storageContainerUrl, and blobPrefix properties to Resource Files 
 
 ## <small>0.6.3 (2019-02-28)</small>
 
