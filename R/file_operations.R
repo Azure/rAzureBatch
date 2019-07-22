@@ -79,7 +79,8 @@ FileOperations <- R6::R6Class(
           request <- AzureRequestV2$new(
             method = verb,
             path = paste0("/jobs/", jobId, "/tasks/", taskId, "/files/", filePath),
-            query = list("api-version" = apiVersion)
+            query = list("api-version" = apiVersion),
+            write = write
           )
 
           response <- self$client$execute(request)
